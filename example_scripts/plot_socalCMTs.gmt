@@ -1,0 +1,105 @@
+#! /bin/bash
+
+# Use gmt and python programs to plot the sample moment tensor data
+# set and faulting style
+
+# To run this script, it must be executable
+#
+# You need the gzipped fault file socalfaults.llz.gz
+#
+# and the cmt file socal_cmts.psmeca
+#
+# and the programs getFaultingStyle.py and MomentTensor.py
+#
+echo $0
+
+# set the lon/lat to plot
+xMin=238.9; xMax=244.8; yMin=32.3; yMax=36.5;
+reg=-R$xMin/$xMax/$yMin/$yMax
+
+# set the map projection and size
+proj=-JM6i
+
+DATADIR=../sample_data
+
+# set the output filename
+ofile=socalCMTs.ps
+
+# set the fault file to use
+faultfile=$DATADIR/socalfaults.llz.gz
+
+# set the cmt file
+cmtfile=$DATADIR/socal_cmts.psmeca
+
+######################################################################
+
+# plot the coast and a distance scale
+pscoast -P  $reg $proj -Dh -W1,0 -Slightblue -L239.3/32.7/244/33/50k \
+    -K > $ofile
+
+# plot the faults
+zcat $faultfile | psxy -O $reg $proj -M -W1,100 -K >> $ofile
+
+# get the earthquakes with faulting style appended to end
+cat $cmtfile | ../src/getFaultingStyle.py > tmp.psmeca
+echo "Number of CMTs in data: $(wc -l tmp.psmeca | awk '{print $1}')"
+
+# define a function for plotting a specific faulting style a specific colour
+function plotCMTs(){
+    flag=$1
+    colour=$2
+
+    cat tmp.psmeca | \
+	gawk '{if($14==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)}' F=$flag | \
+	psmeca -O $reg $proj -Sm.5c -G$colour -L1 -K  >> $ofile
+
+}
+
+# define function to count the number of a faulting style and print a message
+function countCMTs(){
+    flag=$1
+    name=$2
+    
+    echo "Number of $name CMTs in data: \
+$(cat tmp.psmeca | gawk '{if($14==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)}' F=$flag | \
+wc -l | awk '{print $1}')"
+}
+
+# plot oblique = yellow
+# plot reverse = blue
+# plot normal = red
+# plot strike-slip = green
+names=( Oblique Reverse Normal Strike-Slip )
+flags=( O R N S )
+cols=(yellow blue red green)
+
+# plot the different faulting styles
+for i in 0 1 2 3; do 
+    plotCMTs ${flags[i]} ${cols[i]} 
+    countCMTs ${flags[i]} ${names[i]} 
+done
+
+# draw the map border 
+psbasemap -O $reg $proj  -Ba1g1f.1SWne -K >> $ofile
+
+# plot a legend
+for i in 0 1 2 3; do 
+    if [ $i == 0 ]; then dx=.2i; else dx=0.0i; fi
+    echo $xMax $yMax | psxy -O -X$dx -Y-.25i $reg $proj -G${cols[i]} -Ss.8c -W1 -N -K >> $ofile
+    echo $xMax $yMax 12 0 0 LM "${names[i]}" | pstext -O $reg $proj -Dj.4c/0c -N -K >> $ofile
+done
+######################################################################
+
+# finish the plot 
+echo 1000 1000 | psxy -O $reg $proj -Sc.1  -Gwhite >> $ofile
+
+# convert to pdf
+ps2raster -Tf -A -V $ofile
+
+# message to terminal
+echo $0: written to ${ofile%*.ps}.pdf
+
+# clean up
+rm $ofile tmp.*
+
+

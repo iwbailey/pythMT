@@ -1,0 +1,73 @@
+#! /bin/bash
+
+# Use gmt and python programs to plot summations of the sample moment
+# tensor data set 
+
+# To run this script, it must be executable
+#
+# You need the gzipped fault file socalfaults.llz.gz
+#
+# and the cmt file socal_cmts.psmeca
+#
+# and the programs binAndSum.py and MomentTensor.py
+#
+
+echo $0
+
+# set the lon/lat to plot
+xMin=239; xMax=245; yMin=32; yMax=37;
+reg=-R$xMin/$xMax/$yMin/$yMax
+
+# set the map projection and size
+proj=-JM6i
+
+DATADIR=../sample_data
+
+# set the output filename
+ofile=socalSummedCMTs.ps
+
+# set the fault file to use
+faultfile=$DATADIR/socalfaults.llz.gz
+
+# set the cmt file
+cmtfile=$DATADIR/socal_cmts.psmeca
+
+######################################################################
+
+# plot the coast and a distance scale
+pscoast -P  $reg $proj -Dh -W1,0 -Slightblue -L239.3/32.7/244/33/50k \
+    -K > $ofile
+
+# plot the faults
+zcat $faultfile | psxy -O $reg $proj -M -W1,100 -K >> $ofile
+
+# plot the earthquake locations as black dots
+cat $cmtfile | gawk '{print($1,$2)}' | \
+     psxy -O $reg $proj -Sc.1c -Gblack -K  >> $ofile
+
+# sum the earthquakes on a 1 degree bin and plot the resulting
+# tensor in the center of each bin with a line to the moment weighted
+# location
+cat $cmtfile | \
+    ../src/binAndSum.py -x $xMin -X $xMax -y $yMin -Y $yMax --nx=6 --ny=5 --nz=1 -q | \
+     gawk '{print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)}' | \
+     psmeca -O $reg $proj -Sm.8c -Gblack -C3 -L1 -K  >> $ofile
+
+# overlay the border and grid used for the binning
+psbasemap -O $reg $proj  -Ba1g1f.1SWne -K >> $ofile
+
+######################################################################
+
+# finish the plot 
+echo 1000 1000 | psxy -O $reg $proj -Sc.1  -Gwhite >> $ofile
+
+# convert to pdf
+ps2raster -Tf -A -V $ofile
+
+# message to terminal
+echo $0: written to ${ofile%*.ps}.pdf
+
+# clean up
+rm $ofile 
+
+
