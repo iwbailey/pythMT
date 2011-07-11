@@ -10,14 +10,15 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Mar 11 15:34:07 2011 (-0800)
+# Last-Updated: Tue Apr 26 13:01:15 2011 (-0700)
 #           By: Iain Bailey
-#     Update #: 4
+#     Update #: 30
 # 
 # 
 
 # Change Log:
 # 
+# Tue Apr 26 2011: added parser for genRandMT.py
 # 
 # 
 # 
@@ -42,7 +43,7 @@ def binAndSum():
                       help = "Maximum y  [default = 90.0]." )
     parser.add_option("-z", "--zmin", dest="z0",type = "float", default=0.0 ,
                       help = "Minimum depth (km) [default = 0.0]." )
-    parser.add_option("-Z", "--zmax", dest="z1",type = "float", default=1000.0 ,
+    parser.add_option("-Z", "--zmax", dest="z1",type = "float", default=700.0 ,
                       help = "Maximum depth (km) [default = 1000.0]." )
 
     # number of bins
@@ -75,7 +76,48 @@ def binAndSum():
 
     return parser
 
-######################################################################    
+#----------------------------------------------------------------------
+def genRandMT():
+    """
+    Function generates the input parser for the genRand program
+    """
+    parser = OptionParser()
+
+    # define region
+    parser.add_option("-x", "--xmin", dest="x0",type = "float", default=0.0 ,
+                      help = "Minimum x  [default = 0.0]." )
+    parser.add_option("-X", "--xmax", dest="x1",type = "float", default=360.0 ,
+                      help = "Maximum x  [default = 360.0]." )
+    parser.add_option("-y", "--ymin", dest="y0",type = "float", default=-90.0 ,
+                      help = "Minimum y  [default = -90.0]." )
+    parser.add_option("-Y", "--ymax", dest="y1",type = "float", default=90.0 ,
+                      help = "Maximum y  [default = 90.0]." )
+    parser.add_option("-z", "--zmin", dest="z0",type = "float", default=0.0 ,
+                      help = "Minimum depth (km) [default = 0.0]." )
+    parser.add_option("-Z", "--zmax", dest="z1",type = "float", default=700.0 ,
+                      help = "Maximum depth (km) [default = 1000.0]." )
+
+    # number of moment tensors
+    parser.add_option( "-n", "--number", dest="nRand", type = "int", default=100 ,
+                       help = "Number of random tensors [100].")
+
+    # b-value
+    parser.add_option("-b", "--bval", dest="b",type = "float", default=0.0 ,
+                      help = "b-value in G-R distribution [0.0]." )
+
+    # flag for only deviatoric mechanisms
+    parser.add_option("--dev", action="store_true", dest="isDev", default=False,
+                      help="Only deviatoric mechanisms")
+
+    # flag for only DC mechanisms
+    parser.add_option("--dc", action="store_true", dest="isDC", default=False,
+                      help="Only deviatoric, double-couple mechanisms")
+
+    (opt, args)=parser.parse_args()
+
+    return (opt, args)
+
+#######################################################################    
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as

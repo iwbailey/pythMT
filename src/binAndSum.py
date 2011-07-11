@@ -15,12 +15,13 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Mar 11 15:34:07 2011 (-0800)
+# Last-Updated: Fri May  6 13:44:24 2011 (-0700)
 #           By: Iain Bailey
-#     Update #: 4
+#     Update #: 27
 # 
 # Change Log:
-# 
+#
+# Fri May  6 2011: Fixed a bug that was making things at z=z0 go into the last bin
 # 
 # 
 
@@ -85,10 +86,11 @@ while 1:
             and mt.c[1] >= opt.y0 and mt.c[1] < opt.y1
             and mt.c[2] >= opt.z0 and mt.c[2] < opt.z1 ):
 
-            # find bin indices
-            i = int( round ( nx*( mt.c[0] - opt.x0 ) / (opt.x1-opt.x0) - 0.5 ) )
-            j = int( round ( ny*( mt.c[1] - opt.y0 ) / (opt.y1-opt.y0) - 0.5 ) )
-            k = int( round ( nz*( mt.c[2] - opt.z0 ) / (opt.z1-opt.z0) - 0.5 ) )
+            # find bin indices, the max condition prevents indices
+            # being -1 when exactly x0, y0, z0
+            i = max( int( round ( nx*( mt.c[0] - opt.x0 ) / (opt.x1-opt.x0) - 0.5 ) ), 0)
+            j = max( int( round ( ny*( mt.c[1] - opt.y0 ) / (opt.y1-opt.y0) - 0.5 ) ), 0)
+            k = max( int( round ( nz*( mt.c[2] - opt.z0 ) / (opt.z1-opt.z0) - 0.5 ) ), 0)
             
             # Add to the existing summed tensor in that bin
             if( opt.stype == 1):  
@@ -110,6 +112,7 @@ if( opt.verbose ):
 # write bin info to stdout
 for k in range(0,nz):
     z = opt.z0 + k*dz + 0.5*dz # bin coords
+
     for j in range(0,ny):
         y = opt.y0 + j*dy + 0.5*dy
         for i in range(0, nx):
