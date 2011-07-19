@@ -15,9 +15,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri May  6 13:44:24 2011 (-0700)
-#           By: Iain Bailey
-#     Update #: 27
+# Last-Updated: Tue Jul 12 15:08:03 2011 (-0700)
+#           By: Iain William Bailey
+#     Update #: 28
 # 
 # Change Log:
 #
@@ -177,8 +177,6 @@ for k in range(0,nz):
                     # map view
                     sys.stdout.write('%8.2f %8.2f %8.2f ' % (x,y,z))
                
-                # print number in bin and end the line
-                sys.stdout.write('%5i\n' % bins[k*nx*ny +j*nx + i].count )
 
 ######################################################################    
 #
