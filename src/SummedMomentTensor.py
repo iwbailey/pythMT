@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Fri Mar 11 17:57:23 2011 (-0800)
+# Last-Updated: Fri Aug  5 09:11:44 2011 (-0700)
 #           By: Iain Bailey
-#     Update #: 155
+#     Update #: 157
 
 # Commentary:
 #
@@ -87,9 +87,12 @@ class MTsum(SymMT):
         self.count += 1;
 
     # --------------------------------------------------
-    def getCentroid( self ):
-        return self.c / self.cumNorm
-
+    def getCentroid( self , i=-1 ):
+        if( i>= 0 and i <=2 ):
+            return self.c[i] / self.cumNorm
+        else:
+            # return vector
+            return self.c / self.cumNorm
 # #
 # SummedMomentTensor.py ends here
 

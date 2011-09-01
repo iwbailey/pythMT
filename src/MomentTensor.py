@@ -7,9 +7,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Sun Jun  5 13:02:31 2011 (-0700)
+# Last-Updated: Fri Aug  5 09:23:11 2011 (-0700)
 #           By: Iain Bailey
-#     Update #: 356
+#     Update #: 393
 
 # Commentary:
 #
@@ -45,60 +45,6 @@ import numpy as NP
 from  math import sqrt, log10, atan2, pi
 import sys
 
-##################################################
-def readpsmecaSm( thisline , lcount=1):
-    """
-    Take a string as an input argument.  The string should be a psmeca
-    entry.  Return a moment tensor object
-
-    expected input file: 
-    x, y, z, mrr, mtt, mff, mrt, mrf, mtf, exp
-    r = up, t is south, f is east
-
-    the last three parts (lon', lat', id) and anything after are
-    output as a string
-    """
-
-    # Get matrix of floats without spaces
-    # this will crash or get things wrong if you have tabs ('\t') with no spaces
-    tmp = NP.array( thisline.split(' ') )
-    tmp = tmp[ NP.where( tmp != "" ) ]
-
-    # check the number of columns
-    nc = 9 # minimum number of required columns
-    if len( tmp ) < nc :
-        print >> sys.stderr, ( 'Line %i of input. Expecting >= %i cols, got %i' %
-                               ( lcount, nc, len(tmp) ) )
-        raise IOError(69,'Line %i of input. Expecting >= %i cols, got %i' %
-                      ( lcount, nc, len(tmp) ) )
-        return
-
-
-    # get coordinates, assume they represent the centroid
-    centroid = NP.array( [ float(tmp[0]), float(tmp[1]), float(tmp[2]) ] )
-
-    # get mechanism values
-    mrr, mtt, mff, mrt, mrf, mtf = float(tmp[3]), float(tmp[4]), float(tmp[5]), \
-        float(tmp[6]), float(tmp[7]), float(tmp[8])
-    expon = float(tmp[9]) # exponent
-
-    # get whatever is left as a string. reinsert the spaces 
-    endstr = "";
-    for i in range(10,len(tmp)): endstr += ' ' + tmp[i] 
-    endstr = endstr.rstrip('\n')
-
-    # get tensor norm without exponent
-    norm = sqrt( mrr**2 + mtt**2 + mff**2 + 2*( mrt**2 + mrf**2 + mtf**2 ) )
-
-    # Get the normalised tensor
-    # transfer to xx, yy, zz, yz, xz, xy 
-    # where x = east, y = north, z = up
-    m = NP.array( [mff, mtt, mrr, -mrt, mrf, -mtf] )/norm 
-    
-    # Make a moment tensor object
-    MT = SymMT( m, norm*(10**expon), centroid )
-
-    return MT, endstr
 
 ##################################################
 def azimplunge( x ):
@@ -128,6 +74,43 @@ def matrix2mt(Mmat, c, h):
     MT = SymMT( m/norm, norm, c, h )
 
     return MT
+
+##################################################
+def sdr2mt( strike, dip, rake ):
+    """
+    Convert strike, dip, rake (radians) into mt...
+    mt = [ mxx, myy, mzz, myz, mxz, mxy ] where x=E, y=N, z=up
+
+    """
+
+    #  +x as East, +y as North, and +z as up
+    is2 = 1/sqrt(2.0)
+    mxx =  is2*( sin(dip)  * cos(rake) * sin(2*strike) -
+                 sin(2*delta) * sin(rake) * cos(strike)**2 );
+
+    mxy =  is2*( sin(dip)  * cos(rake) * cos(2*strike) + 
+                 0.5*sin(2*delta) * sin(rake) * sin(2*strike) );
+
+    mxz =  is2*( cos(dip)  * cos(rake) * sin(strike)  -
+                 cos(2*delta) * sin(rake) * cos(strike));
+
+    myy = -is2*( sin(dip)  * cos(rake) * sin(2*strike) +     
+                 sin(2*delta) * sin(rake) * sin(strike)**2 );
+
+    myz =  is2*( cos(dip)  * cos(rake) * cos(strike)  -     
+                 cos(2*delta) * sin(rake) * sin(strike) );
+
+    mzz =  is2*( sin(2*delta) * sin(rake) );
+
+
+    return NP.array([ mxx, myy, mzz, myz, mxz, mxy ] )
+
+##################################################
+def mag2m0( mag ):
+    """
+    Use Hanks and Kanamori reln to compute moment
+    """
+    return 10**(1.5*(mag+10.7))
 
 ##################################################
 class SymMT:
@@ -167,10 +150,16 @@ class SymMT:
                   , c = NP.array( [0.0, 0.0, 0.0] )  # centroid location
                   , h = NP.array( [0.0, 0.0, 0.0] )  # hypocenter location
                   , cov = NP.zeros( 36 ) # covariance matrix
+                  , strike = None, dip = None, rake = None # fault params in radians
+                  , mag = None
                   ):
 
-        self.mhat = mhat # mxx, myy, mzz, myz, mxz, mxy
-        self.Norm = Norm # euclidean norm of moment tensor
+        if strike != None and dip != None and rake != None:
+            self.mhat = sdr2mt( strike, dip, rake )
+            self.Norm = mag2m0( mag )/sqrt(2.0)
+        else:
+            self.mhat = mhat # mxx, myy, mzz, myz, mxz, mxy
+            self.Norm = Norm # euclidean norm of moment tensor
         self.c = c # centroid lon lat depth
         self.h = h # hypocenter lon lat depth
         self.cov = cov # covariance matrix for M

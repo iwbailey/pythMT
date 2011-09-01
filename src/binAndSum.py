@@ -15,9 +15,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Tue Jul 12 15:08:03 2011 (-0700)
-#           By: Iain William Bailey
-#     Update #: 28
+# Last-Updated: Fri Aug  5 16:09:04 2011 (-0700)
+#           By: Iain Bailey
+#     Update #: 32
 # 
 # Change Log:
 #
@@ -33,7 +33,7 @@ from optparse import OptionParser
 
 # personal libraries used, these need to be in the same directory or python path
 import genParser as ARG
-from MomentTensor import readpsmecaSm  
+from ioFunctions import readpsmecaSm  
 import SummedMomentTensor as SMT
 
 # define constants
@@ -176,7 +176,9 @@ for k in range(0,nz):
                 else:
                     # map view
                     sys.stdout.write('%8.2f %8.2f %8.2f ' % (x,y,z))
-               
+
+                # print the number of events
+                sys.stdout.write('%4i\n' % bins[k*nx*ny +j*nx + i].count)
 
 ######################################################################    
 #

@@ -11,9 +11,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Tue Mar 15 12:21:54 2011 (-0700)
+# Last-Updated: Fri Aug  5 16:11:13 2011 (-0700)
 #           By: Iain Bailey
-#     Update #: 56
+#     Update #: 57
 #  
 # Change Log:
 # 
@@ -26,7 +26,7 @@ import sys
 from optparse import OptionParser
 
 # Personal libraries used
-from MomentTensor import readpsmecaSm  
+from ioFunctions import readpsmecaSm  
 
 # get command line options
 parser = OptionParser()

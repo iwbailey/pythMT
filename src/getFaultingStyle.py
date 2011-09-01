@@ -13,9 +13,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Mar 11 15:34:07 2011 (-0800)
+# Last-Updated: Fri Aug  5 16:09:16 2011 (-0700)
 #           By: Iain Bailey
-#     Update #: 1
+#     Update #: 2
 #  
 # Change Log:
 # 
@@ -29,7 +29,7 @@ from math import sin, pi
 from optparse import OptionParser
 
 # Personal libraries used
-from MomentTensor import readpsmecaSm  
+from ioFunctions import readpsmecaSm  
 
 # Get the minimum plunge
 # we regard an axis as vertical if plunge greater than this 

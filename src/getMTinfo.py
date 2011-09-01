@@ -11,9 +11,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri May  6 14:07:53 2011 (-0700)
+# Last-Updated: Fri Aug  5 16:08:03 2011 (-0700)
 #           By: Iain Bailey
-#     Update #: 157
+#     Update #: 173
 #  
 # Change Log:
 # 
@@ -28,7 +28,7 @@ from math import log10, sqrt
 import numpy as NP
 
 # Personal libraries used
-from MomentTensor import readpsmecaSm  
+from ioFunctions import readpsmecaSm  
 
 # constants 
 sqrt2 = sqrt(2.0)
@@ -105,7 +105,8 @@ while 1:
         if opt.gamma:
             sys.stdout.write("%-5.3f " %  MT.getGamma() )
         if( opt.mrr ):
-            sys.stdout.write("%5.3f " %  ( sqrt2*MT.smt(3,3) ) )
+            (tval, t, bval, b, pval, p) = MT.getPTB()
+            sys.stdout.write("%5.3f " %  ( MT.Norm*MT.smt(3,3)/NP.max([tval,-pval]) ) )
         if opt.check:
             # if( sqrt2*MT.mhat[2] > 1 ): 
             #     print NP.sum( MT.mhat[0:3]*MT.mhat[0:3] ) + 2*NP.sum( MT.mhat[3:6]*MT.mhat[3:6] )
