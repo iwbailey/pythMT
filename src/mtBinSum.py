@@ -1,20 +1,20 @@
 #!/usr/bin/env python
-# mtSum.py --- 
+# mtBinSum.py --- 
 # 
-# Filename: mtSum.py
+# Filename: mtBinSum.py
 # Description: 
 #
 # Read in moment tensors, various formats, output the summed tensor
 #
-# type 'mtSum.py -h' for help
+# type 'mtBinSum.py -h' for help
 #
 # Author: IW Bailey
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Sun Sep  4 16:46:42 2011 (-0700)
+# Last-Updated: Fri Sep  2 11:32:42 2011 (-0700)
 #           By: Iain William Bailey
-#     Update #: 98
+#     Update #: 183
 # 
 # Change Log:
 #
@@ -29,10 +29,11 @@ import argparse as AP
 
 # personal libraries used, these need to be in the same directory or python path
 import ioFunctions as IO
+import EqkBin as EB
 import SummedMomentTensor as SMT
 
 # define constants
-progname='mtSum'
+progname='mtBinSum'
 
 #------------------------------
 # command line arguments
@@ -43,6 +44,26 @@ parser.add_argument('ifile', nargs='?', type=AP.FileType('r'), default=sys.stdin
 
 parser.add_argument('ofile', nargs='?', type=AP.FileType('w'), default=sys.stdout,
                     help = "Output file [stdout]")
+
+parser.add_argument('--m01', nargs=2, type=float, default =[-99.9, 99.9],
+                    help = "Magnitude range [-99 to 99]" )
+parser.add_argument('--nm', dest = "nm", type=int, default=1,
+                    help = "Number of magnitude bins [1]" )
+
+parser.add_argument('--x01', nargs=2, type=float, default =[0.0, 360.0],
+                    help = "Longitude or x range [0 to 360]" )
+parser.add_argument('--nx', dest = "nx", type=int, default=1,
+                    help = "Number of x bins [1]" )
+
+parser.add_argument('--y01', nargs=2, type=float, default =[-90.0, 90.0],
+                    help = "Latitude or y range [-90 to 90]" )
+parser.add_argument('--ny', dest = "ny", type=int, default=1,
+                    help = "Number of y bins [1]" )
+
+parser.add_argument('--z01', nargs=2, type=float, default =[0.0, 700.0],
+                    help = "Depth or z range [0.0 to 700]" )
+parser.add_argument('--nz', dest = "nz", type=int, default=1,
+                    help = "Number of z bins [1]" )
 
 parser.add_argument("--ifmt", dest ="ifmt", type=int, default=0,
                     help = "Input data format; 0=psmeca / 1=strike,dip,rake [0]" )
@@ -67,27 +88,55 @@ else:
 ndata = len(mtlist)
 if( args.isVb ): sys.stderr.write('%i events read in.\n' % ndata )
 
-# generate the empty moment tensor summation
-mtSum = SMT.MTsum()
-
 # normalise correction
 if( args.stype == 1):  
     for i in range( 0, ndata ): mtlist[i].Norm = 1
 
-# add the tensors
-for i in range( 0, ndata ):
-    mtSum.add( mtlist[i] )
+# bin in magnitude
+binx = 0.5*( args.x01[0] + args.x01[1] )
+biny = 0.5*( args.y01[0] + args.y01[1] )
+binz = 0.5*( args.z01[0] + args.z01[1] )
 
-# output the result
+( binlist, ninside) = EB.binMT_mag( mtlist, args.m01[0], args.m01[1], args.nm, 
+                                    NP.array([binx, biny, binz]) )
 
-# get psmeca format for 1st 10 columns
-(X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) = mtSum.getPsmecaSm()
-args.ofile.write('%-10.6f %10.6f %6.2f %9.6f %9.6f %9.6f %9.6f %9.6f %9.6f %3i ' % 
-                 ( X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) )
+if( args.isVb ): sys.stderr.write('%i events within Mag range.\n' % ninside )
 
+# TODO bin in space
 
-# print the number of events
-args.ofile.write('%4i\n' % mtSum.count)
+# compute summed tensors
+nbins = len( binlist )
+if( args.isVb ): sys.stderr.write('%i bins in total considered.\n' % nbins )
+
+# loop through all bins
+mtsumlist = []
+for i in range(0,nbins):
+    # skip if empty
+    if( binlist[i] == None ):
+        mtsumlist.append(None)
+        continue
+
+    # make summed tensor and add to list
+    mtSum = SMT.MTsum()
+    for mt in binlist[i].eqklist[:]: mtSum.add( mt )
+
+    mtsumlist.append(mtSum)
+
+# output
+for i in range(0,nbins):
+
+    # skip if no data in bin
+    if( binlist[i] == None ): continue
+
+    # get psmeca format for 1st 10 columns
+    (X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) = mtsumlist[i].getPsmecaSm()
+    args.ofile.write('%-10.6f %10.6f %6.2f %9.6f %9.6f %9.6f %9.6f %9.6f %9.6f %3i ' % 
+                     ( X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) )
+
+    # write bin info, keeping psmeca form
+    args.ofile.write('%10.4f %10.4f Bin_%i %8.2f %6.2f %6i\n' % 
+                     ( binlist[i].xyz[0], binlist[i].xyz[1], i, binlist[i].xyz[2], 
+                       binlist[i].mag, binlist[i].n ) )
 
 
 ######################################################################    
@@ -108,5 +157,5 @@ args.ofile.write('%4i\n' % mtSum.count)
 # Floor, Boston, MA 02110-1301, USA.
 # 
 ######################################################################    
-# mtSum.py ends here
+# mtBinSum.py ends here
 

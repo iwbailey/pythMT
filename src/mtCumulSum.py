@@ -1,24 +1,23 @@
 #!/usr/bin/env python
-# mtSum.py --- 
+# mtCumulSum.py --- 
 # 
-# Filename: mtSum.py
+# Filename: mtCumulSum.py
 # Description: 
 #
 # Read in moment tensors, various formats, output the summed tensor
 #
-# type 'mtSum.py -h' for help
+# type 'mtCumulSum.py -h' for help
 #
 # Author: IW Bailey
 # Maintainer: IW Bailey
-# Created: Fri Mar 11 15:31:41 2011 (-0800)
+# Created: Sun Sep  4 17:01:59 2011 (-0700)
 # Version: 1
-# Last-Updated: Sun Sep  4 16:46:42 2011 (-0700)
+# Last-Updated: Sun Sep  4 17:03:53 2011 (-0700)
 #           By: Iain William Bailey
-#     Update #: 98
+#     Update #: 5
 # 
 # Change Log:
 #
-# Fri May  6 2011: Fixed a bug that was making things at z=z0 go into the last bin
 # 
 # 
 
@@ -32,11 +31,11 @@ import ioFunctions as IO
 import SummedMomentTensor as SMT
 
 # define constants
-progname='mtSum'
+progname='mtCumulSum'
 
 #------------------------------
 # command line arguments
-parser = AP.ArgumentParser( description='Sum a set of moment tensors' )
+parser = AP.ArgumentParser( description='Cumulatively sum a set of moment tensors' )
 
 parser.add_argument('ifile', nargs='?', type=AP.FileType('r'), default=sys.stdin, 
                     help = "Input file [stdin]")
@@ -68,26 +67,27 @@ ndata = len(mtlist)
 if( args.isVb ): sys.stderr.write('%i events read in.\n' % ndata )
 
 # generate the empty moment tensor summation
-mtSum = SMT.MTsum()
+mtCSum = SMT.MTsum()
 
 # normalise correction
 if( args.stype == 1):  
     for i in range( 0, ndata ): mtlist[i].Norm = 1
 
-# add the tensors
+# loop through data
 for i in range( 0, ndata ):
-    mtSum.add( mtlist[i] )
 
-# output the result
+    # add tensor
+    mtCSum.add( mtlist[i] )
 
-# get psmeca format for 1st 10 columns
-(X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) = mtSum.getPsmecaSm()
-args.ofile.write('%-10.6f %10.6f %6.2f %9.6f %9.6f %9.6f %9.6f %9.6f %9.6f %3i ' % 
-                 ( X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) )
+    # output the result
 
+    # get psmeca format for 1st 10 columns
+    (X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) = mtCSum.getPsmecaSm()
+    args.ofile.write('%-10.6f %10.6f %6.2f %9.6f %9.6f %9.6f %9.6f %9.6f %9.6f %3i ' % 
+                     ( X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) )
 
-# print the number of events
-args.ofile.write('%4i\n' % mtSum.count)
+    # print the number of events
+    args.ofile.write('%4i\n' % mtCSum.count)
 
 
 ######################################################################    
@@ -108,5 +108,5 @@ args.ofile.write('%4i\n' % mtSum.count)
 # Floor, Boston, MA 02110-1301, USA.
 # 
 ######################################################################    
-# mtSum.py ends here
+# mtCumulSum.py ends here
 

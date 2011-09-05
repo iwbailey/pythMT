@@ -11,12 +11,12 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Aug  5 16:08:03 2011 (-0700)
-#           By: Iain Bailey
-#     Update #: 173
+# Last-Updated: Sun Sep  4 17:15:12 2011 (-0700)
+#           By: Iain William Bailey
+#     Update #: 176
 #  
 # Change Log:
-# 
+# Sun Sep  4 17:14:40 2011 (-0700): Fixed for r-theta-phi changes
 # 
 # 
 # 
@@ -90,8 +90,8 @@ while 1:
 
         if opt.smt:
             # get tensor components, r = up, t = south, f = east
-            mrr, mtt, mff = MT.mhat[2], MT.mhat[1], MT.mhat[0]
-            mrt, mrf, mtf = -MT.mhat[3], MT.mhat[4], -MT.mhat[5]
+            mrr, mtt, mff = MT.mhat[0], MT.mhat[1], MT.mhat[2]
+            mrt, mrf, mtf = MT.mhat[5], MT.mhat[4], MT.mhat[3]
             sys.stdout.write("%-8.6f %8.6f %8.6f %8.6f %8.6f %8.6f" %  
                              ( mrr, mtt, mff, mrt, mrf, mtf ))
         if opt.m0:
@@ -106,7 +106,7 @@ while 1:
             sys.stdout.write("%-5.3f " %  MT.getGamma() )
         if( opt.mrr ):
             (tval, t, bval, b, pval, p) = MT.getPTB()
-            sys.stdout.write("%5.3f " %  ( MT.Norm*MT.smt(3,3)/NP.max([tval,-pval]) ) )
+            sys.stdout.write("%5.3f " %  ( MT.Norm*MT.smt(0,0)/NP.max([tval,-pval]) ) )
         if opt.check:
             # if( sqrt2*MT.mhat[2] > 1 ): 
             #     print NP.sum( MT.mhat[0:3]*MT.mhat[0:3] ) + 2*NP.sum( MT.mhat[3:6]*MT.mhat[3:6] )

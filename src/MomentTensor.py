@@ -7,9 +7,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Fri Aug  5 09:23:11 2011 (-0700)
-#           By: Iain Bailey
-#     Update #: 393
+# Last-Updated: Sat Sep  3 11:15:48 2011 (-0700)
+#           By: Iain William Bailey
+#     Update #: 432
 
 # Commentary:
 #
@@ -42,6 +42,7 @@
 # Code:
 
 import numpy as NP
+from numpy import sin, cos
 from  math import sqrt, log10, atan2, pi
 import sys
 
@@ -49,13 +50,14 @@ import sys
 ##################################################
 def azimplunge( x ):
     """ 
-    Get the azimuth and plunge in degrees of a vector where x=[x,y,z]
-    where x=E, y=N, z=up
+    Get the azimuth and plunge in degrees of a vector where x=[r,t,p]
+    where r=up, t=South, p=East
     """
-    if x[2]>0 : x*=-1;  # make downward pointing
-    xh = sqrt(x[0]**2 + x[1]**2) # get horizontal length
-    plunge = 180.0*atan2( -x[2], xh )/pi  # plunge should be positive
-    azim = 180*atan2(x[0], x[1])/pi
+    if x[0]>0 : x*=-1;  # make downward pointing
+
+    xh = sqrt(x[1]**2 + x[2]**2) # get horizontal length
+    plunge = 180.0*atan2( -x[0], xh )/pi  # plunge should be positive
+    azim = 180*atan2(x[2], -x[1])/pi # angle cw from n
 
     return (azim, plunge)
 
@@ -65,7 +67,8 @@ def matrix2mt(Mmat, c, h):
     Convert a numpy array into a SymMT object
     """
     # convert to vector with voigt notation
-    m = NP.array([Mmat[0,0], Mmat[1,1], Mmat[2,2], Mmat[1,2], Mmat[0,2], Mmat[0,1]] )
+    m = NP.array([ Mmat[0,0], Mmat[1,1], Mmat[2,2], 
+                   Mmat[1,2], Mmat[0,2], Mmat[0,1]] )
 
     # get the norm
     norm = sqrt( NP.sum(m*m) + NP.sum(m[3:6]*m[3:6]) )
@@ -79,31 +82,28 @@ def matrix2mt(Mmat, c, h):
 def sdr2mt( strike, dip, rake ):
     """
     Convert strike, dip, rake (radians) into mt...
-    mt = [ mxx, myy, mzz, myz, mxz, mxy ] where x=E, y=N, z=up
-
+    mt = [ mrr, mtt, mpp, mtp, mrp, mrt ] where r=UP, t=S, p=E  
     """
-
-    #  +x as East, +y as North, and +z as up
     is2 = 1/sqrt(2.0)
-    mxx =  is2*( sin(dip)  * cos(rake) * sin(2*strike) -
-                 sin(2*delta) * sin(rake) * cos(strike)**2 );
 
-    mxy =  is2*( sin(dip)  * cos(rake) * cos(2*strike) + 
-                 0.5*sin(2*delta) * sin(rake) * sin(2*strike) );
+    mrr =  is2*( sin(2*dip) * sin(rake) );
 
-    mxz =  is2*( cos(dip)  * cos(rake) * sin(strike)  -
-                 cos(2*delta) * sin(rake) * cos(strike));
+    mtt = -is2*( sin(dip)  * cos(rake) * sin(2*strike) +     
+                 sin(2*dip) * sin(rake) * sin(strike)**2 );
 
-    myy = -is2*( sin(dip)  * cos(rake) * sin(2*strike) +     
-                 sin(2*delta) * sin(rake) * sin(strike)**2 );
+    mpp =  is2*( sin(dip)  * cos(rake) * sin(2*strike) -
+                 sin(2*dip) * sin(rake) * cos(strike)**2 );
 
-    myz =  is2*( cos(dip)  * cos(rake) * cos(strike)  -     
-                 cos(2*delta) * sin(rake) * sin(strike) );
+    mtp = -is2*( sin(dip)  * cos(rake) * cos(2*strike) + 
+                 0.5*sin(2*dip) * sin(rake) * sin(2*strike) );
 
-    mzz =  is2*( sin(2*delta) * sin(rake) );
+    mrp =  is2*( cos(dip)  * cos(rake) * sin(strike)  -
+                 cos(2*dip) * sin(rake) * cos(strike));
 
+    mrt = -is2*( cos(dip)  * cos(rake) * cos(strike)  -     
+                 cos(2*dip) * sin(rake) * sin(strike) );
 
-    return NP.array([ mxx, myy, mzz, myz, mxz, mxy ] )
+    return NP.array([ mrr, mtt, mpp, mtp, mrp, mrt ] )
 
 ##################################################
 def mag2m0( mag ):
@@ -111,6 +111,13 @@ def mag2m0( mag ):
     Use Hanks and Kanamori reln to compute moment
     """
     return 10**(1.5*(mag+10.7))
+
+##################################################
+def m02mag( m0 ):
+    """
+    Use Hanks and Kanamori reln to compute magnitude
+    """
+    return (log10(m0)/1.5) - 10.7 
 
 ##################################################
 class SymMT:
@@ -124,8 +131,8 @@ class SymMT:
     where
 
     m = normalized symmetric tensor (source mech tensor) using voigt
-      notation in the form [ mxx, myy, mzz, myz, mxz, mxy ] and x =
-      East, y = North, z=up
+      notation in the form [ mrr, mtt, mpp, mtp, mrp, mrt ] and r =
+      Up, t=South and p=East
 
     M0 = scalar moment [A.U], such that M_ij = sqrt(2) M0 m_ij
 
@@ -156,10 +163,16 @@ class SymMT:
 
         if strike != None and dip != None and rake != None:
             self.mhat = sdr2mt( strike, dip, rake )
-            self.Norm = mag2m0( mag )/sqrt(2.0)
         else:
             self.mhat = mhat # mxx, myy, mzz, myz, mxz, mxy
+
+        if mag != None:
+            self.mag = mag
+            self.Norm = mag2m0( mag )/sqrt(2.0)
+        else:
             self.Norm = Norm # euclidean norm of moment tensor
+            if Norm != 0.0: self.mag = m02mag( sqrt(2.0)*Norm )
+            else: self.mag = None
         self.c = c # centroid lon lat depth
         self.h = h # hypocenter lon lat depth
         self.cov = cov # covariance matrix for M
@@ -191,9 +204,9 @@ class SymMT:
     def getSMTmat( self ):
         """
         Get the full 9 compnents of the source mechanism tensor
-        [ mxx mxy mxz ]
-        [ myx myy myz ]
-        [ mzx mzy mzz ]
+        [ mrr mrt mrp ]
+        [ mtr mtt mtp ]
+        [ mpr mpt mpp ]
         """
         return NP.array( [
                 [ self.mhat[0], self.mhat[5], self.mhat[4] ],
@@ -218,8 +231,8 @@ class SymMT:
     # --------------------------------------------------
     def getEig( self ):
         """
-        Return the eigenvectors and eigenvalues
-        P, B, T as columns of matrix
+        Return the eigenvectors [P, B, T] as columns of matrix,
+        rows will be r, theta, phi components.
         eigenvalues as a horizontal vector with same order
         (1st column will be the smallest eigenvalue)
         """
@@ -251,9 +264,9 @@ class SymMT:
         """
         # get the eigenvalues and vectors
         (V,D) = self.getEig()
-        p = V[:,0] 
-        b = V[:,1]
-        t = V[:,2]
+        p = V[:,0] # r
+        b = V[:,1] # theta
+        t = V[:,2] # phi
 
         pval = D[0]
         bval = D[1]
@@ -398,8 +411,8 @@ class SymMT:
         fac =  self.Norm / 10**exp
 
         # get tensor components, r = up, t = south, f = east
-        mrr, mtt, mff = self.mhat[2], self.mhat[1], self.mhat[0]
-        mrt, mrf, mtf = -self.mhat[3], self.mhat[4], -self.mhat[5]
+        mrr, mtt, mff = self.mhat[0], self.mhat[1], self.mhat[2]
+        mtf, mrf, mrt = self.mhat[3], self.mhat[4], self.mhat[5]
 
         return X, Y, depth, \
             fac*mrr, fac*mtt, fac*mff, fac*mrt, fac*mrf, fac*mtf, exp

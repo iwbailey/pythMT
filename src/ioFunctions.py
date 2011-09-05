@@ -1,7 +1,7 @@
 import sys
 import numpy as NP
-from math import sqrt
-from MomentTensor import SymMT
+from math import sqrt, pi
+from MomentTensor import SymMT, sdr2mt
 
 #--------------------------------------------------
 def readpsmecaSm( thisline , lcount=1):
@@ -31,7 +31,6 @@ def readpsmecaSm( thisline , lcount=1):
                       ( lcount, nc, len(tmp) ) )
         return
 
-
     # get coordinates, assume they represent the centroid
     centroid = NP.array( [ float(tmp[0]), float(tmp[1]), float(tmp[2]) ] )
 
@@ -49,9 +48,7 @@ def readpsmecaSm( thisline , lcount=1):
     norm = sqrt( mrr**2 + mtt**2 + mff**2 + 2*( mrt**2 + mrf**2 + mtf**2 ) )
 
     # Get the normalised tensor
-    # transfer to xx, yy, zz, yz, xz, xy 
-    # where x = east, y = north, z = up
-    m = NP.array( [mff, mtt, mrr, -mrt, mrf, -mtf] )/norm 
+    m = NP.array( [mrr, mtt, mff, mtf, mrf, mrt] )/norm 
     
     # Make a moment tensor object
     MT = SymMT( m, norm*(10**expon), centroid )
@@ -75,13 +72,34 @@ def readPsmecaList( istream ):
     return mtlist
 
 #--------------------------------------------------
-def readSDRList( istream ):
+def readSDRfile( istream ):
     """
-    From an input file or stdin, read a list of moment tensors in psmeca form
-    """
-    for line in istream:
-        (mt, enstr) = readSDR( line, lcount )
-        mtlist.append( mt )
-        lcount += 1
+    From an input file or stdin, read a list of focal mechanisms in
+    strike/dip/rake form
 
-    return 1
+    lon/lat/depth/strike/dip/rake/mag
+    """
+    lcount = 0
+    mtlist = []
+
+    # get data in numpy array
+    data = NP.genfromtxt( istream, usecols=(0, 1, 2, 3, 4, 5, 6), autostrip=True )
+
+    nline = NP.size( data, 0 )
+    for i in range(0,nline):
+
+        # get variables
+        hypo = data[i, 0:3 ] # lon , lat, z
+        sdr = data[i, 3:6]*pi/180 # in radians
+        mag = data[i, 6]
+
+        #TODO: error checking 
+
+        # Make a moment tensor object
+        MT = SymMT( c = hypo, h = hypo,
+                    strike = sdr[0], dip = sdr[1], rake=sdr[2],
+                    mag = mag )
+
+        mtlist.append( MT )
+        
+    return mtlist

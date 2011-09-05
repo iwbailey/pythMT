@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Fri Aug  5 09:11:44 2011 (-0700)
-#           By: Iain Bailey
-#     Update #: 157
+# Last-Updated: Fri Sep  2 11:16:53 2011 (-0700)
+#           By: Iain William Bailey
+#     Update #: 164
 
 # Commentary:
 #
@@ -72,9 +72,9 @@ class MTsum(SymMT):
         """
         summt = self.getMvec() + newmt.getMvec()
 
-        # update the location.  This doesn't mean anything until we get to the end
-        self.c = (self.c) + (newmt.Norm*newmt.c) 
-        self.h = (self.h) + (newmt.Norm*newmt.h)
+        # update the location. 
+        self.c = ( self.cumNorm*self.c + newmt.Norm*newmt.c )/(self.cumNorm + newmt.Norm)
+        self.h = ( self.cumNorm*self.h + newmt.Norm*newmt.h )/(self.cumNorm + newmt.Norm)
 
         # update the norm
         self.Norm = sqrt( NP.sum( summt*summt ) + NP.sum( summt[2:6]*summt[2:6] ) )
@@ -86,13 +86,15 @@ class MTsum(SymMT):
         # update number
         self.count += 1;
 
-    # --------------------------------------------------
-    def getCentroid( self , i=-1 ):
-        if( i>= 0 and i <=2 ):
-            return self.c[i] / self.cumNorm
-        else:
-            # return vector
-            return self.c / self.cumNorm
+    # # --------------------------------------------------
+    # def getCentroid( self , i=-1 ):
+    #     if( i>= 0 and i <=2 ):
+    #         return self.c[i] / self.cumNorm
+    #     else:
+    #         # return vector
+    #         return self.c / self.cumNorm
+
+
 # #
 # SummedMomentTensor.py ends here
 

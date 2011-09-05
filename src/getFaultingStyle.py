@@ -13,9 +13,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Aug  5 16:09:16 2011 (-0700)
-#           By: Iain Bailey
-#     Update #: 2
+# Last-Updated: Sat Sep  3 10:58:28 2011 (-0700)
+#           By: Iain William Bailey
+#     Update #: 54
 #  
 # Change Log:
 # 
@@ -25,58 +25,81 @@
 
 # Standard libraries used
 import sys
-from math import sin, pi
-from optparse import OptionParser
+from numpy import sin, pi, argmax, abs
+import argparse as AP
 
-# Personal libraries used
-from ioFunctions import readpsmecaSm  
+# personal libraries used, these need to be in the same directory or python path
+import ioFunctions as IO
 
-# Get the minimum plunge
-# we regard an axis as vertical if plunge greater than this 
-parser = OptionParser()
-parser.add_option("-p", "--pmin", dest="pmin", type = "float", default=60.0 ,
-                  help = "Minimum plunge for an axis to be defined as vertical [60.0^o]." )
-(opt, args)=parser.parse_args()
+
+#------------------------------
+# command line arguments
+parser = AP.ArgumentParser( description='Get the faulting style for a population of focal mechanisms' )
+
+parser.add_argument('ifile', nargs='?', type=AP.FileType('r'), default=sys.stdin, 
+                    help = "Input file [stdin]")
+
+parser.add_argument('ofile', nargs='?', type=AP.FileType('w'), default=sys.stdout,
+                    help = "Output file [stdout]")
+
+parser.add_argument("--ifmt", dest ="ifmt", type=int, default=0,
+                    help = "Input data format; 0=psmeca/1=strike,dip,rake [0]" )
+
+parser.add_argument("-p", "--pmin", dest="pmin", type=float, default=None ,
+                    help = "Minimum plunge for an axis to be defined as vertical [take min of 3 axes]." )
+
+parser.add_argument("-v" , "--verbose", action="store_true", dest="isVb", default=False,
+                    help="Verbose output [False]")
+
+args = parser.parse_args()
+
+#------------------------------
+
+# read the moment tensors
+if( args.ifmt == 1 ):
+    if( args.isVb ): sys.stderr.write('Reading Strike/dip/rake.\n' )
+    mtlist = IO.readSDRfile( args.ifile )
+else:
+    mtlist = IO.readPsmecaList( args.ifile )
+
+ndata = len(mtlist)
+if( args.isVb ): sys.stderr.write('%i events read in.\n' % ndata )
 
 # convert min plunge to min abs val of z component
-minZ = sin(abs(opt.pmin)*pi/180)
+if( args.pmin != None ):
+    minZ = sin(abs(args.pmin)*pi/180)
+else:
+    # no oblique category if pmin is not defined
+    minZ = 0.0
 
-# read in from stdin assuming psmeca format
-Ndata = 0
-while 1:
-    thisline = sys.stdin.readline()
 
-    if thisline != '':
+# loop through each tensor
+for i in range(0,ndata):
 
-        # Read line as SymMT object
-        MT, extra = readpsmecaSm( thisline )
-        Ndata += 1
+    # get eigen solution
+    # ptb rows are r; theta; phi, cols are p, b, t
+    [pbt, vals] = mtlist[i].getEig()
+  
+    # find which axis is most vertical
+    maxzi = argmax( abs( pbt[0,:] ) )
 
-        # get faulting style
-        [ptb, vals] = MT.getEig()
+    if abs(pbt[2,maxzi]) < minZ:
+        # none of the axes are vertical enough
+        sys.stdout.write("1 %-12s " % ("oblique") )
+    elif maxzi == 0:
+        # p (min) axis is most vertical
+        sys.stdout.write("1 %-12s " % ("normal") )
+    elif maxzi == 1:
+        # b (intermediate) axis is most vertical
+        sys.stdout.write("2 %-12s " % ("strike-slip") )
+    elif maxzi == 2:
+        # t (max) axis is most vertical
+        sys.stdout.write("3 %-12s " % ("reverse") )
+    else:
+        print >>sys.stderr(), "ERROR: don't understand eig vals"
 
-        if( abs(ptb[2,0])<minZ and  abs(ptb[2,1])<minZ and abs(ptb[2,2])<minZ ):
-            # oblique if no axis is within maxplunge of vertical
-            ftype='O'
-            ftypei=0
-        elif( abs( ptb[2,0] ) > abs( ptb[2,1] ) and
-              abs( ptb[2,0] ) > abs( ptb[2,2] ) ):
-            # normal if the P axis is most vertical
-            ftype='N'
-            ftypei=1
-        elif( abs( ptb[2,1] ) > abs( ptb[2,2] ) ):
-            # strike slip if the B axis is most vertical 
-            ftype = 'S'
-            ftypei = 2
-        else:
-            # Reverse if the T axis is most vertical
-            ftype = 'R'
-            ftypei = 3
-
-        # output the original line with faulting style tacked on the end
-        print "%s %c %i" % ( thisline.rstrip('\n'), ftype, ftypei )
-
-    else: break
+    print "%9.6f %9.6f %9.6f" % (pbt[0,0],pbt[0,1],pbt[0,2])
+sys.exit()    
             
 ###########################################################
 #
