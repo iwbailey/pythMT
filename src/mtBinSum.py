@@ -12,9 +12,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Sep  2 11:32:42 2011 (-0700)
+# Last-Updated: Tue Sep  6 10:08:39 2011 (-0700)
 #           By: Iain William Bailey
-#     Update #: 183
+#     Update #: 206
 # 
 # Change Log:
 #
@@ -93,16 +93,36 @@ if( args.stype == 1):
     for i in range( 0, ndata ): mtlist[i].Norm = 1
 
 # bin in magnitude
-binx = 0.5*( args.x01[0] + args.x01[1] )
-biny = 0.5*( args.y01[0] + args.y01[1] )
-binz = 0.5*( args.z01[0] + args.z01[1] )
-
-( binlist, ninside) = EB.binMT_mag( mtlist, args.m01[0], args.m01[1], args.nm, 
+binx = 0.5*(args.x01[0]+args.x01[1])
+biny = 0.5*(args.y01[0]+args.y01[1])
+binz = 0.5*(args.z01[0]+args.z01[1])
+( binlist1, ninside) = EB.binMT_mag( mtlist, args.m01[0], args.m01[1], args.nm, 
                                     NP.array([binx, biny, binz]) )
 
 if( args.isVb ): sys.stderr.write('%i events within Mag range.\n' % ninside )
 
-# TODO bin in space
+# check if also spatial binning
+nxyz = args.nx * args.ny *args.nz 
+
+if nxyz == 0:
+    binlist = binlist1
+else:
+    # bin in xyz
+    binlist =  []
+    nmbins = len(binlist1) # actual number of magnitude bins containing data
+    ninside = 0
+
+    # loop through mag bins and further subdivide
+    for i in range(0, nmbins):
+        if( binlist1[i] == None ): continue # skip empty bins
+        (tmp_binlist, tmp_nin) = EB.binMT_xyz( binlist1[i].eqklist, 
+                                               args.x01[0], args.x01[1], args.nx, 
+                                               args.y01[0], args.y01[1], args.ny, 
+                                               args.z01[0], args.z01[1], args.nz)
+        binlist.extend( tmp_binlist )
+        ninside+=tmp_nin
+
+if( args.isVb ): sys.stderr.write('%i events within XYZ range.\n' % ninside )
 
 # compute summed tensors
 nbins = len( binlist )

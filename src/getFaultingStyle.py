@@ -13,9 +13,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Sat Sep  3 10:58:28 2011 (-0700)
+# Last-Updated: Tue Sep  6 10:30:48 2011 (-0700)
 #           By: Iain William Bailey
-#     Update #: 54
+#     Update #: 69
 #  
 # Change Log:
 # 
@@ -67,7 +67,9 @@ if( args.isVb ): sys.stderr.write('%i events read in.\n' % ndata )
 
 # convert min plunge to min abs val of z component
 if( args.pmin != None ):
+    if( args.isVb ): sys.stderr.write('p_min = %f.\n' % args.pmin )
     minZ = sin(abs(args.pmin)*pi/180)
+    if( args.isVb ): sys.stderr.write('minZ = %f.\n' % minZ )
 else:
     # no oblique category if pmin is not defined
     minZ = 0.0
@@ -83,9 +85,9 @@ for i in range(0,ndata):
     # find which axis is most vertical
     maxzi = argmax( abs( pbt[0,:] ) )
 
-    if abs(pbt[2,maxzi]) < minZ:
+    if abs(pbt[0,maxzi]) < minZ:
         # none of the axes are vertical enough
-        sys.stdout.write("1 %-12s " % ("oblique") )
+        sys.stdout.write("0 %-12s " % ("oblique") )
     elif maxzi == 0:
         # p (min) axis is most vertical
         sys.stdout.write("1 %-12s " % ("normal") )

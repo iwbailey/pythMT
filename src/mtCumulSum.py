@@ -12,9 +12,9 @@
 # Maintainer: IW Bailey
 # Created: Sun Sep  4 17:01:59 2011 (-0700)
 # Version: 1
-# Last-Updated: Sun Sep  4 17:03:53 2011 (-0700)
+# Last-Updated: Sun Sep  4 18:48:06 2011 (-0700)
 #           By: Iain William Bailey
-#     Update #: 5
+#     Update #: 11
 # 
 # Change Log:
 #
@@ -71,6 +71,7 @@ mtCSum = SMT.MTsum()
 
 # normalise correction
 if( args.stype == 1):  
+    if( args.isVb ): sys.stderr.write('Normalising tensors.\n' )
     for i in range( 0, ndata ): mtlist[i].Norm = 1
 
 # loop through data
@@ -87,7 +88,7 @@ for i in range( 0, ndata ):
                      ( X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) )
 
     # print the number of events
-    args.ofile.write('%4i\n' % mtCSum.count)
+    args.ofile.write('0.0 0.0 %-4i\n' % mtCSum.count)
 
 
 ######################################################################    

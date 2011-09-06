@@ -7,9 +7,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Sat Sep  3 11:15:48 2011 (-0700)
+# Last-Updated: Sun Sep  4 18:22:01 2011 (-0700)
 #           By: Iain William Bailey
-#     Update #: 432
+#     Update #: 449
 
 # Commentary:
 #
@@ -293,14 +293,23 @@ class SymMT:
         """
         Separate the deviatoric and the components of the tensor
         """
+        EPS=1e-5;
         iso = self.getIso()
         norm = sqrt( 3*(iso**2) ) 
-        MTiso = SymMT( NP.array([ iso, iso, iso, 0,0,0])/norm , 
-                       norm, self.c, self.h )
+        if( norm < EPS ):
+            MTiso = SymMT( NP.array([ 0,0,0, 0,0,0]) , 
+                           0.0, self.c, self.h )
+        else:
+            MTiso = SymMT( NP.array([ iso, iso, iso, 0,0,0])/norm , 
+                           norm, self.c, self.h )
 
         mdev = self.getMvec() - NP.array([ iso, iso, iso, 0,0,0])
         norm = NP.sqrt( sum(mdev**2) +  sum(mdev[3:]**2) )
-        MTdev = SymMT( mdev/norm , norm, self.c, self.h )
+        if( norm < EPS ):
+            MTiso = SymMT( NP.array([ 0,0,0, 0,0,0]) , 
+                           0.0, self.c, self.h )
+        else:
+            MTdev = SymMT( mdev/norm , norm, self.c, self.h )
 
         return MTdev, MTiso
 
@@ -342,6 +351,7 @@ class SymMT:
                           self.c, self.h)
 
         return (MTdc, MT2, MTiso)
+
         
         
 

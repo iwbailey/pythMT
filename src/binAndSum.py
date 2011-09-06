@@ -15,9 +15,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Aug  5 16:09:04 2011 (-0700)
-#           By: Iain Bailey
-#     Update #: 32
+# Last-Updated: Tue Sep  6 10:32:20 2011 (-0700)
+#           By: Iain William Bailey
+#     Update #: 33
 # 
 # Change Log:
 #
@@ -121,7 +121,7 @@ for k in range(0,nz):
             if( bins[k*nx*ny +j*nx + i].count > 0 ):
 
                 # get the centroid locations
-                c = bins[k*nx*ny +j*nx + i].getCentroid();
+                c = bins[k*nx*ny +j*nx + i].c;
                 Cx, Cy, Cz = c[0], c[1], c[2]
  
                 # print centroid location

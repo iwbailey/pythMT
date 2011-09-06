@@ -19,8 +19,7 @@ def readpsmecaSm( thisline , lcount=1):
 
     # Get matrix of floats without spaces
     # this will crash or get things wrong if you have tabs ('\t') with no spaces
-    tmp = NP.array( thisline.split(' ') )
-    tmp = tmp[ NP.where( tmp != "" ) ]
+    tmp = NP.array( thisline.split() )
 
     # check the number of columns
     nc = 9 # minimum number of required columns
@@ -43,7 +42,7 @@ def readpsmecaSm( thisline , lcount=1):
     endstr = "";
     for i in range(10,len(tmp)): endstr += ' ' + tmp[i] 
     endstr = endstr.rstrip('\n')
-
+    
     # get tensor norm without exponent
     norm = sqrt( mrr**2 + mtt**2 + mff**2 + 2*( mrt**2 + mrf**2 + mtf**2 ) )
 

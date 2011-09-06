@@ -12,9 +12,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Jun  3 16:23:39 2011 (-0700)
 # Version: 1
-# Last-Updated: Fri Aug  5 16:09:54 2011 (-0700)
-#           By: Iain Bailey
-#     Update #: 75
+# Last-Updated: Sun Sep  4 18:22:44 2011 (-0700)
+#           By: Iain William Bailey
+#     Update #: 97
 #  
 # Change Log:
 # 
@@ -52,8 +52,10 @@ parser.add_option("--check",action="store_true", dest="isCheck", default=False,
 # read in from stdin assuming psmeca format
 Ndata = 0
 lcount = 0
+
 while 1:
     thisline = sys.stdin.readline()
+
     lcount += 1
     if thisline != '':
         
@@ -62,7 +64,9 @@ while 1:
             MT, extra = readpsmecaSm( thisline, lcount )
             Ndata += 1
         except:
+            sys.exit()
             continue
+
 
         # debugging option
         if opt.isCheck:
