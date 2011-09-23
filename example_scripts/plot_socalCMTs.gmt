@@ -40,37 +40,42 @@ pscoast -P  $reg $proj -Dh -W1,0 -Slightblue -L239.3/32.7/244/33/50k \
 # plot the faults
 zcat $faultfile | psxy -O $reg $proj -M -W1,100 -K >> $ofile
 
-# get the earthquakes with faulting style appended to end
-cat $cmtfile | ../src/getFaultingStyle.py > tmp.psmeca
-echo "Number of CMTs in data: $(wc -l tmp.psmeca | awk '{print $1}')"
+# get the earthquakes  faulting style
+cat $cmtfile | ../src/getFaultingStyle.py --pmin=60 -v > tmp.fstyle
+echo "Number of CMTs in data: $(wc -l tmp.fstyle | awk '{print $1}')"
 
+# paste $cmtfile tmp.fstyle |  head
+
+#------------------------------------------------
 # define a function for plotting a specific faulting style a specific colour
 function plotCMTs(){
     flag=$1
     colour=$2
 
-    cat tmp.psmeca | \
+    paste $cmtfile tmp.fstyle | \
 	gawk '{if($14==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)}' F=$flag | \
 	psmeca -O $reg $proj -Sm.5c -G$colour -L1 -K  >> $ofile
 
 }
-
+#------------------------------------------------
+#------------------------------------------------
 # define function to count the number of a faulting style and print a message
 function countCMTs(){
     flag=$1
     name=$2
     
     echo "Number of $name CMTs in data: \
-$(cat tmp.psmeca | gawk '{if($14==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)}' F=$flag | \
+$(paste $cmtfile tmp.fstyle | gawk '{if($14==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)}' F=$flag | \
 wc -l | awk '{print $1}')"
 }
+#------------------------------------------------
 
 # plot oblique = yellow
 # plot reverse = blue
 # plot normal = red
 # plot strike-slip = green
 names=( Oblique Reverse Normal Strike-Slip )
-flags=( O R N S )
+flags=( 0 1 3 2 )
 cols=(yellow blue red green)
 
 # plot the different faulting styles

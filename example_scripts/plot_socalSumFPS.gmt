@@ -1,0 +1,109 @@
+#! /bin/bash
+
+# Use gmt and python programs to plot summations of the sample Fault plane solution
+# data set 
+
+# To run this script, it must be executable
+#
+# You need the gzipped fault file socalfaults.llz.gz
+#
+# and the cmt file socal_cmts.psmeca
+#
+# and the programs binAndSum.py and MomentTensor.py
+#
+
+echo $0
+
+# set the lon/lat to plot
+xMin=-120; xMax=-115; 
+yMin=32; yMax=37;
+zMin=0.0; zMax=15.0
+nx=50; ny=50; nz=1
+reg=-R$xMin/$xMax/$yMin/$yMax
+
+# set the map projection and size
+proj=-JM6i
+
+DATADIR=../sample_data
+
+# set the output filename
+ofile=socalSummedFPSs.ps
+
+# set the fault file to use
+faultfile=$DATADIR/socalfaults.llz.gz
+
+# set the eqk
+eqkfile=${1-$DATADIR/socal_1984_2003.llzsdrmi.txt}
+
+#------------------------------------------------
+# define a function for plotting a specific faulting style a specific colour
+function plotCMTs(){
+    flag=$1
+    colour=$2
+
+    paste tmp.sum.psmeca tmp.fstyle | \
+	gawk '{if($13==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)}' F=$flag | \
+	psmeca -O $reg $proj -Sm.3c -G$colour -M -C3 -L1 -K  >> $ofile
+
+}
+#------------------------------------------------
+######################################################################
+
+# plot the coast and a distance scale
+pscoast -P  $reg $proj -Dh -W1,0 -Slightblue -L239.3/32.7/244/33/50k \
+    -K > $ofile
+
+# plot the faults
+zcat $faultfile | psxy -O $reg $proj -M -W1,100 -K >> $ofile
+
+# plot the earthquake locations as black dots
+cat $eqkfile | gawk '{print($1,$2)}' | \
+     psxy -O $reg $proj -Sc.02c -Gblack -K  >> $ofile
+
+cat $eqkfile | \
+    gawk '{print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)}' | \
+    psmeca -O $reg $proj -Sa.5c -L1 -K  >> $ofile
+# # sum the earthquakes on a 0.1 degree bin and plot the resulting
+# # tensor in the center of each bin with a line to the moment weighted
+# # location
+# cat $eqkfile | \
+#     ../src/mtBinSum.py --ifmt=1 \
+#     --x01 $xMin $xMax --y01 $yMin $yMax --nx=$nx --ny=$ny --nz=$nz -v | \
+#       gawk '{print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)}' > tmp.sum.psmeca
+
+# # get the faulting styles
+# cat tmp.sum.psmeca | ../src/getFaultingStyle.py --pmin=60 -v > tmp.fstyle
+
+# paste tmp.sum.psmeca tmp.fstyle | head -1
+# # plot the different faulting styles
+# # plot oblique = yellow
+# # plot reverse = blue
+# # plot normal = red
+# # plot strike-slip = green
+# names=( Oblique Reverse Normal Strike-Slip )
+# flags=( 0 1 3 2 )
+# cols=(yellow blue red green)
+# for i in 0 1 2 3; do 
+#     plotCMTs ${flags[i]} ${cols[i]} 
+# done
+
+
+# overlay the border and grid used for the binning
+psbasemap -O $reg $proj  -Ba1g1f.1SWne -K >> $ofile
+
+######################################################################
+
+# finish the plot 
+echo 1000 1000 | psxy -O $reg $proj -Sc.1  -Gwhite >> $ofile
+
+# convert to pdf
+ps2raster -A -Tfg -V $ofile
+
+# message to terminal
+echo $0: written to ${ofile%*.ps}.pdf
+echo $0: written to ${ofile%*.ps}.png
+
+# clean up
+rm $ofile tmp.*
+
+
