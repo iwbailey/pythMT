@@ -1,0 +1,19 @@
+README --- 
+;; 
+;; Filename: README
+;; Author: Iain Bailey
+;; Created: Fri Sep 23 13:51:32 2011 (-0700)
+;; Last-Updated: Fri Sep 23 13:52:04 2011 (-0700)
+;;           By: Iain Bailey
+;;     Update #: 3
+;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+programs are in the src directory
+
+run the example scripts for the easiest way to work out what's going on.  
+
+sample_data contains some input files you can use
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
