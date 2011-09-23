@@ -32,8 +32,15 @@ ofile=socalSummedFPSs.ps
 # set the fault file to use
 faultfile=$DATADIR/socalfaults.llz.gz
 
-# set the eqk
+# set the eqk file
 eqkfile=${1-$DATADIR/socal_1984_2003.llzsdrmi.txt}
+
+# check file exists
+if [ ! -s $eqkfile ]; then 
+    echo "The input file $eqkfile doesn't exist"
+    echo "You may need to go to the sample_data directory and run ./convertHASHcat.sh"
+    exit
+fi
 
 #------------------------------------------------
 # define a function for plotting a specific faulting style a specific colour
@@ -71,7 +78,6 @@ cat $eqkfile | \
 # get the faulting styles
 cat tmp.sum.psmeca | ../src/getFaultingStyle.py --pmin=60 -v > tmp.fstyle
 
-paste tmp.sum.psmeca tmp.fstyle | head -1
 # plot the different faulting styles
 # plot oblique = yellow
 # plot reverse = blue
