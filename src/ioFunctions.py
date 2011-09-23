@@ -82,7 +82,7 @@ def readSDRfile( istream ):
     mtlist = []
 
     # get data in numpy array
-    data = NP.genfromtxt( istream, usecols=(0, 1, 2, 3, 4, 5, 6), autostrip=True )
+    data = NP.genfromtxt( istream, usecols=(0, 1, 2, 3, 4, 5, 6) ) #, autostrip=True )
 
     nline = NP.size( data, 0 )
     for i in range(0,nline):
