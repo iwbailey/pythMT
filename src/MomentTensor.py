@@ -7,9 +7,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Sun Sep  4 18:22:01 2011 (-0700)
-#           By: Iain William Bailey
-#     Update #: 449
+# Last-Updated: Tue Nov 15 15:53:58 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 455
 
 # Commentary:
 #
@@ -18,7 +18,7 @@
 #
 
 # Change Log:
-#
+# Tue Nov 15 2011 : mrt had a - where it should have had a +
 #
 #
 #
@@ -100,7 +100,7 @@ def sdr2mt( strike, dip, rake ):
     mrp =  is2*( cos(dip)  * cos(rake) * sin(strike)  -
                  cos(2*dip) * sin(rake) * cos(strike));
 
-    mrt = -is2*( cos(dip)  * cos(rake) * cos(strike)  -     
+    mrt = -is2*( cos(dip)  * cos(rake) * cos(strike)  +    
                  cos(2*dip) * sin(rake) * sin(strike) );
 
     return NP.array([ mrr, mtt, mpp, mtp, mrp, mrt ] )
