@@ -1,6 +1,6 @@
-# ioFunctions.py --- 
+# iofuncs.py --- 
 # 
-# Filename: ioFunctions.py
+# Filename: iofuncs.py
 # Description: 
 #
 # Functions for related input and output in this package
@@ -8,9 +8,9 @@
 # Author: Iain William Bailey
 # Created: Wed Dec 21 10:00:03 2011 (-0800)
 # Version: 1
-# Last-Updated: Wed Dec 21 10:01:11 2011 (-0800)
+# Last-Updated: Wed Dec 21 10:36:23 2011 (-0800)
 #           By: Iain William Bailey
-#     Update #: 3
+#     Update #: 6
 
 # Change Log:
 # 
@@ -23,8 +23,9 @@
 import sys
 import numpy as NP
 from math import sqrt, pi
-from MomentTensor import SymMT
-from DoubleCouple import sdr2mt
+
+from momenttensor import SymMT
+from doublecouple import sdr2smt
 
 #--------------------------------------------------
 def readpsmecaSm( thisline , lcount=1):
@@ -144,4 +145,4 @@ def readSDRfile( istream ):
 # Floor, Boston, MA 02110-1301, USA.
 # 
 # 
-# ioFunctions.py ends here
+# iofuncs.py ends here

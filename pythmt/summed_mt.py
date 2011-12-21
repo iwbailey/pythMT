@@ -1,44 +1,22 @@
 #!/usr/bin/env python
-# SummedMomentTensor.py --- 
+# summed_mt.py --- 
 # 
-# Filename: SummedMomentTensor.py
+# Filename: summed_mt.py
 #
 # Description: Python class for summed moment tensor, derived class of
-# SymMT (see MomentTensor.py)
+# SymMT (see momenttensor.py)
 #
 # Author: IW Bailey
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Mon Dec 19 10:50:24 2011 (-0800)
-#           By: Iain Bailey
-#     Update #: 166
-
-# Commentary:
-#
-#
-#
-#
+# Last-Updated: Wed Dec 21 11:05:47 2011 (-0800)
+#           By: Iain William Bailey
+#     Update #: 171
 
 # Change Log:
 #
 #
-#
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-# Floor, Boston, MA 02110-1301, USA.
 #
 #
 
@@ -47,7 +25,7 @@ import numpy as NP
 from math import sqrt
 
 # other libs, must be in path
-from MomentTensor import SymMT
+from momenttensor import SymMT
 #import sys
 
 # Python class representing a summed moment tensor, derived class of SymMT
@@ -88,6 +66,21 @@ class MTsum(SymMT):
 
 
 # #
-# SummedMomentTensor.py ends here
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street, Fifth
+# Floor, Boston, MA 02110-1301, USA.
+#
+# summed_mt.py ends here
 
 

@@ -1,6 +1,6 @@
-# EqkBin.py --- 
+# eqkbinning.py --- 
 # 
-# Filename: EqkBin.py
+# Filename: eqkbinning.py
 # Description: 
 #
 # Functions for binning a set of earthquakes, class describing that
@@ -9,9 +9,9 @@
 # Author: Iain William Bailey
 # Created: Wed Dec 21 09:50:55 2011 (-0800)
 # Version: 1
-# Last-Updated: Wed Dec 21 10:02:50 2011 (-0800)
+# Last-Updated: Wed Dec 21 10:35:24 2011 (-0800)
 #           By: Iain William Bailey
-#     Update #: 14
+#     Update #: 16
 
 # Change Log:
 # 
@@ -37,7 +37,7 @@ def binMT_mag( mtlist, m1=0.0, m2=10.0, nm=10, binlocn=np.array([0.0, 0.0, 0.0])
     ndat = len(mtlist)
     mags = np.zeros( ndat )
     for i in range(0,ndat):
-        mags[i] = mtlist[i].mag
+        mags[i] = mtlist[i].mag # assume moment tensor classes
 
     # convert to bin indices
     magi = np.floor( nm*( mags - m1 )/(m2 - m1) )
@@ -159,4 +159,4 @@ class EqkBin:
 # the Free Software Foundation, Inc., 51 Franklin Street, Fifth
 # Floor, Boston, MA 02110-1301, USA.
 # 
-# EqkBin.py ends here
+# eqkbinning.py ends here

@@ -1,15 +1,18 @@
 #!/usr/bin/env python
-# MomentTensor.py --- 
+# momenttensor.py --- 
 # 
-# Filename: MomentTensor.py
-# Description: Python class for symmetric moment tensor
+# Filename: momenttensor.py
+# Description: 
+# 
+# Python class for symmetric moment tensor and associated functions
+#
 # Author: IW Bailey
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Mon Dec 19 14:04:29 2011 (-0800)
-#           By: Iain Bailey
-#     Update #: 466
+# Last-Updated: Wed Dec 21 11:06:00 2011 (-0800)
+#           By: Iain William Bailey
+#     Update #: 496
 
 # Commentary:
 #
@@ -18,24 +21,13 @@
 #
 
 # Change Log:
+#
+# Wed Dec 21 2011 : Removed strike and dip stuff, since added double
+# couple as separate entity
+#
 # Tue Nov 15 2011 : mrt had a - where it should have had a +
 #
 #
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 3, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street, Fifth
-# Floor, Boston, MA 02110-1301, USA.
 #
 #
 
@@ -46,7 +38,7 @@ from numpy import sin, cos
 from  math import sqrt, log10, atan2, pi
 import sys
 
-# FUNCTIONS ##################################################
+# FUNCTIONS ##################################################################
 
 def azimplunge( x ):
     """ 
@@ -61,24 +53,7 @@ def azimplunge( x ):
 
     return (azim, plunge)
 
-#----------------------------------------------------
-def matrix2mt(Mmat, c, h):
-    """
-    Convert a numpy array into a SymMT object
-    """
-    # convert to vector with voigt notation
-    m = NP.array([ Mmat[0,0], Mmat[1,1], Mmat[2,2], 
-                   Mmat[1,2], Mmat[0,2], Mmat[0,1]] )
-
-    # get the norm
-    norm = sqrt( NP.sum(m*m) + NP.sum(m[3:6]*m[3:6]) )
-
-    # make the tensor object
-    MT = SymMT( m/norm, norm, c, h )
-
-    return MT
-
-#----------------------------------------------------
+#---------------------------------------------------------------------
 def voigt2mat( v ):
     """
     convert from vector with voigt notation to a matrix
@@ -88,8 +63,25 @@ def voigt2mat( v ):
             [ v[5], v[1], v[3] ],
             [ v[4], v[3], v[2] ] ])
 
-#------------------------------------------------------------
-def mteig( mat ):
+#---------------------------------------------------------------------
+def mat2voight( M ):
+    """
+    convert from symmteric matrix as Numpy array to vector with voigt
+    ordering
+    """
+    return NP.array( [M[0,0], M[1,1], M[2,2], M[1,2], M[0,2], M[0,1]] )
+
+#---------------------------------------------------------------------
+def voigtnorm( v ):
+    """
+    Get the norm of a 6 component matrix in voigt form
+    """
+    
+    # diagonals once, off diagonals twice 
+    return sqrt( NP.sum(v*v) + NP.sum(v[3:6]*v[3:6]) )
+
+#---------------------------------------------------------------------
+def mateig( mat ):
     """
     Get the eigen solution of a 3x3 moment tensor matrix 
     given as the ptb matrix and eigen values
@@ -108,21 +100,23 @@ def mteig( mat ):
 
     return ( vecs , vals )
 
-#----------------------------------------------------
+#---------------------------------------------------------------------
 def mag2m0( mag ):
     """
     Use Hanks and Kanamori reln to compute moment
     """
     return 10**(1.5*(mag+10.7))
 
-#----------------------------------------------------
+#---------------------------------------------------------------------
 def m02mag( m0 ):
     """
     Use Hanks and Kanamori reln to compute magnitude
     """
     return (log10(m0)/1.5) - 10.7 
 
-##############################################################
+
+
+###############################################################################
 
 class SymMT:
     """
@@ -158,15 +152,18 @@ class SymMT:
     def __init__( self
                   , mhat = NP.zeros( 6 )  # normalised tensor/source mech tensor
                   , Norm = 0.0  # norm of tensor, such that M = Norm*smt
+                  , MT = None  # 3x3 numpy array option 
                   , c = NP.array( [0.0, 0.0, 0.0] )  # centroid location
                   , h = NP.array( [0.0, 0.0, 0.0] )  # hypocenter location
                   , cov = NP.zeros( 36 ) # covariance matrix
                   , mag = None
                   ):
 
-        if strike != None and dip != None and rake != None:
-            self.mhat = sdr2mt( strike, dip, rake )
+        if ( MT != None ):
+            # initiate from the numpy matrix
+            frommatrix( MT )
         else:
+            # use the vector form
             self.mhat = mhat # mxx, myy, mzz, myz, mxz, mxy
 
         if mag != None:
@@ -176,9 +173,28 @@ class SymMT:
             self.Norm = Norm # euclidean norm of moment tensor
             if Norm != 0.0: self.mag = m02mag( sqrt(2.0)*Norm )
             else: self.mag = None
+
         self.c = c # centroid lon lat depth
         self.h = h # hypocenter lon lat depth
         self.cov = cov # covariance matrix for M
+        
+    #--------------------------------------------------------------------
+    def frommatrix( Mmat, c, h):
+        """
+        Convert a numpy array into a SymMT object
+        """
+        
+        # convert to vector with voigt notation
+        m = mat2voight(Mmat)
+
+        # get the norm
+        norm = voigtnorm(m)
+
+        # make the tensor object
+        self.mhat = m/norm
+        self.Norm = norm
+
+        return 
 
     # --------------------------------------------------
     def smt( self, i, j ):
@@ -529,4 +545,19 @@ class SymMT:
 
 #         return
 # #
-# MomentTensor.py ends here
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street, Fifth
+# Floor, Boston, MA 02110-1301, USA.
+#
+# momenttensor.py ends here
