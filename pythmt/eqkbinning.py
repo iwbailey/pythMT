@@ -1,5 +1,27 @@
-# Functions that take a list of moment tensors and but them in bins
+# EqkBin.py --- 
+# 
+# Filename: EqkBin.py
+# Description: 
+#
+# Functions for binning a set of earthquakes, class describing that
+# bin
+#
+# Author: Iain William Bailey
+# Created: Wed Dec 21 09:50:55 2011 (-0800)
+# Version: 1
+# Last-Updated: Wed Dec 21 10:02:50 2011 (-0800)
+#           By: Iain William Bailey
+#     Update #: 14
+
+# Change Log:
+# 
+# 
+# ***********License stuff at bottom ************
+
+# Code:
 import numpy as np
+
+# FUNCTIONS ############################################################
 
 #--------------------------------------------------
 def binMT_mag( mtlist, m1=0.0, m2=10.0, nm=10, binlocn=np.array([0.0, 0.0, 0.0]) ):
@@ -100,8 +122,10 @@ def binMT_xyz( mtlist # list of moment tensors
 
     return (binlist, ntot)
 
-##--------------------------------------------------
-class eqkBin:
+# CLASSES  ############################################################
+
+#-------------------------------------------------------
+class EqkBin:
     """
     A bin of earthquake data
     """
@@ -115,6 +139,24 @@ class eqkBin:
         self.eqklist = eqklist
         self.n = len(eqklist) # number of earthquakes
 
-
+#-------------------------------------------------------
 
         
+#######################################################################
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 3, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING.  If not, write to
+# the Free Software Foundation, Inc., 51 Franklin Street, Fifth
+# Floor, Boston, MA 02110-1301, USA.
+# 
+# EqkBin.py ends here
