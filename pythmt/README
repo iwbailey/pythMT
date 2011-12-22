@@ -1,0 +1,46 @@
+README --- 
+;; 
+;; Filename: README
+;; Author: Iain Bailey (iwbailey@usc.edu)
+;; Created: Fri Sep 23 13:51:32 2011 (-0700)
+;; Last-Updated: Wed Dec 21 16:52:23 2011 (-0800)
+;;           By: Iain William Bailey
+;;     Update #: 23
+;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Programs for working with summed moment tensor data
+
+I'm terrible at updating my documentation so this may be out of date.
+Check the Last-Updated above against the file information.
+
+
+This is the readme for all of the modules in this directory. Basic
+description of what they do.
+
+
+- momenttensor.py 
+Contains different classes for a moment tensor and some related
+functions.  SymMT stores the six components.  EigMT stores the eigen
+solution.
+
+- summed_mt.py
+Inherited class of SymMT that allows for addition of moment tensors
+
+- doublecouple.py
+Functions and a class for a double couple
+
+- eqkbinning.py 
+Functions for binning earthquake data and a class for describing a
+single bin.
+
+- iofuncs.py
+Functions for reading and writing common related formats
+
+- quaternion.py 
+Class and related functino for interfacing with the quaternion from
+the cgkit package
+
+- randomfuncs.py
+Functions dealing with creating a random population of moment tensors
+
