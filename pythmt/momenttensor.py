@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Wed Dec 21 11:06:00 2011 (-0800)
+# Last-Updated: Wed Dec 21 12:12:08 2011 (-0800)
 #           By: Iain William Bailey
-#     Update #: 496
+#     Update #: 538
 
 # Commentary:
 #
@@ -151,35 +151,44 @@ class SymMT:
     # Constructor
     def __init__( self
                   , mhat = NP.zeros( 6 )  # normalised tensor/source mech tensor
-                  , Norm = 0.0  # norm of tensor, such that M = Norm*smt
+                  , Norm = None  # norm of tensor, such that M = Norm*smt
                   , MT = None  # 3x3 numpy array option 
                   , c = NP.array( [0.0, 0.0, 0.0] )  # centroid location
                   , h = NP.array( [0.0, 0.0, 0.0] )  # hypocenter location
                   , cov = NP.zeros( 36 ) # covariance matrix
                   , mag = None
+                  , rigidity = 30 # rigidity of source region (GPa)
                   ):
 
         if ( MT != None ):
             # initiate from the numpy matrix
-            frommatrix( MT )
+            __frommatrix( MT )
         else:
             # use the vector form
-            self.mhat = mhat # mxx, myy, mzz, myz, mxz, mxy
+            if Norm == None:
+                # case where we normalise
+                self.Norm = voigtnorm( mhat )
+                self.mhat = mhat/self.Norm # mxx, myy, mzz, myz, mxz, mxy
+            else:
+                # force normalisation
+                self.mhat = mhat/voigtnorm( mhat )
+                self.Norm = Norm
 
+        # magnitude not necessarily linked to moment
         if mag != None:
             self.mag = mag
-            self.Norm = mag2m0( mag )/sqrt(2.0)
         else:
-            self.Norm = Norm # euclidean norm of moment tensor
-            if Norm != 0.0: self.mag = m02mag( sqrt(2.0)*Norm )
-            else: self.mag = None
+            self.mag = m02mag( sqrt(2.0)*self.Norm )
 
         self.c = c # centroid lon lat depth
         self.h = h # hypocenter lon lat depth
+
         self.cov = cov # covariance matrix for M
+
+        self.rigidity = rigidity # ridgidity in GPa
         
     #--------------------------------------------------------------------
-    def frommatrix( Mmat, c, h):
+    def __frommatrix( Mmat, c, h):
         """
         Convert a numpy array into a SymMT object
         """
@@ -197,101 +206,78 @@ class SymMT:
         return 
 
     # --------------------------------------------------
-    def smt( self, i, j ):
+    def smt( self, i=None, j=None ):
         """
-        Get ij component of source mechanism tensor, where i=1,2,3
+        Get full Source mech tensor or ij component of source
+        mechanism tensor, where i=1,2,3
         """
-        if( i == j ): return self.mhat[ i-1 ]
-        else: return self.mhat[ 6 - i - j + 2 ]
+        if( i==None and j==None):
+            # no indices defined, return a numpy matrix
+            return voigt2mat( self.mhat )
+        else:
+            # else return a component
+            if( i == j ): return self.mhat[ i-1 ]
+            else: return self.mhat[ 6 - i - j + 2 ]
 
     # --------------------------------------------------
-    def M( self, i, j ):
+    def M( self, i=None, j=None ):
         """ 
-        Get ij component of moment tensor; i,j =1,2,3
+        Get full moment tensor or ij component of moment tensor; i,j =1,2,3
         """
-        return self.Norm * self.smt( i, j )
+        if( i==None and j==None):
+            # no indices defined, return a numpy matrix
+            return self.Norm*voigt2mat( self.mhat )
+        else:
+            return self.Norm * self.smt( i, j )
 
     # --------------------------------------------------
-    def getMvec( self ):
+    def M0( self ):
         """
-        Get the whole moment tensor in 6 component form
-        [mxx, myy, mzz, myz, mxz, mxy]
-        """
-        return self.Norm * self.mhat
-
-    # --------------------------------------------------
-    def getSMTmat( self ):
-        """
-        Get the full 9 compnents of the source mechanism tensor
-        [ mrr mrt mrp ]
-        [ mtr mtt mtp ]
-        [ mpr mpt mpp ]
-        """
-        return NP.array( [
-                [ self.mhat[0], self.mhat[5], self.mhat[4] ],
-                [ self.mhat[5], self.mhat[1], self.mhat[3] ],
-                [ self.mhat[4], self.mhat[3], self.mhat[2] ] ])
-
-    # --------------------------------------------------
-    def getM0( self ):
-        """
-        Get scalar moment
+        Get scalar moment as defined by Silver and Jordan
         """
         return self.Norm / sqrt(2.0)
 
     # --------------------------------------------------
-    def getMw( self ):
+    def Mw( self ):
         """
         Get moment magnitude
-        MW = (2/3)*(log M0 - 16.1)
         """
-#        return 2*(log10( self.getM0() )- 16.1)/3
-        return 2*(log10( self.getM0() ))/3 - 10.7
+        return m02mag( self.M0() )
+
     # --------------------------------------------------
-    def getEig( self ):
+    def eig( self ):
         """
         Return the eigenvectors [P, B, T] as columns of matrix,
         rows will be r, theta, phi components.
         eigenvalues as a horizontal vector with same order
         (1st column will be the smallest eigenvalue)
         """
-        M = self.getSMTmat()
-        
-        # get min, int, max eigen vals, vects in that order
-        (vals, vecs) = NP.linalg.eigh( M , UPLO='U')
+        (vecs, vals) = mateig( voigt2mat(self.mhat) )
 
-        # sort the eigs from low to high
-        ind = NP.argsort(vals)
-        vals = vals[ind]
-        vecs = vecs[:, ind]
-
-        # prescribe orthogonality, b = t x p
-        vecs[:,1] = NP.cross( vecs[:,2] , vecs[:,0] )
-
-        # return vectors
+        # return vectors and values
         return ( vecs , vals*self.Norm )
 
     # --------------------------------------------------
-    def getPTB( self ):
+    def pbt( self ):
         """
         Return the Eigen solution in manageable parts
 
         OUT
-        tval = eigen value for t axis
-        t = numpy array for t axis vector (East-North-Up coord system)
-        bval, b, pval, p = etc.
+        pval = eigen value for p axis
+        p = numpy array for p axis vector (up, South, East coord system)
+        bval, b, tval, t = etc.
         """
+
         # get the eigenvalues and vectors
-        (V,D) = self.getEig()
-        p = V[:,0] # r
-        b = V[:,1] # theta
-        t = V[:,2] # phi
+        (V,D) = self.eig()
 
-        pval = D[0]
-        bval = D[1]
-        tval = D[2]
+        # extract 3 component r, theta, phi vectors
+        p, b, t = V[:,0], V[:,1], V[:,2] # phi
 
-        return tval, t, bval, b, pval, p
+        # get the values
+        pval, bval, tval = D[0], D[1], D[2]
+
+        return pval, p, bval, b, tval, t
 
     # --------------------------------------------------
     def getMhatIso( self ):
