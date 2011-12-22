@@ -3,17 +3,23 @@ README ---
 ;; Filename: README
 ;; Author: Iain Bailey
 ;; Created: Fri Sep 23 13:51:32 2011 (-0700)
-;; Last-Updated: Fri Sep 23 13:52:04 2011 (-0700)
+;; Last-Updated: Mon Dec 19 15:18:38 2011 (-0800)
 ;;           By: Iain Bailey
-;;     Update #: 3
+;;     Update #: 9
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-programs are in the src directory
+modules are in the pythmt directory
 
-run the example scripts for the easiest way to work out what's going on.  
+Install the modules into the python path and scripts into your path by
 
-sample_data contains some input files you can use
+> sudo python setup.py install
+
+To uninstall...
+
+> sudo pip uninstall pythmt
+
+Example bash scripts are in the examples directory
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
