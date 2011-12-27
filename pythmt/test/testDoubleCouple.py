@@ -2,11 +2,18 @@
 
 # check that the double couple is working fine
  
+import os
 import sys
 import numpy as np
 from math import pi
-from pythmt.MomentTensorDC import DoubleCouple  
 
+# add next directory up to path
+srcpath = os.path.join( os.getcwd(), '..' )
+sys.path.append( srcpath )
+
+# import module to test
+import doublecouple 
+from doublecouple import DoubleCouple as DC
 
 # degrees to radians conversion
 D2R = pi/180.0;
@@ -14,25 +21,29 @@ D2R = pi/180.0;
 np.set_printoptions(precision=3, suppress=True)
 
 print "Testing the default constructor"
-dc0 = DoubleCouple()
-print "pb = "
+dc0 = DC()
+print "pbt = "
 print dc0.pbt
 print ""
 
-print "Testing the conversion from strike, dip and rake"
-stk = [0,   0, 45 ]
-dip = [90, 45, 90 ]
-rak = [0, -90,  0 ]
+#strike, dip, rake = 0, 45, -90 
+strike, dip, rake = 10, 70, 25 
+print( "Strike: %.1f^o, Dip: %.1f^o, Rake: %.1f^o" %  (strike, dip, rake) )
+dc = DC( strike=D2R*strike, dip=D2R*dip, rake=D2R*rake )
+print "pbt:"
+print dc.pbt
 
-n = len(stk)
+# test the quaternion representation
+(q1, q2, q3, q4)  = dc.quats()
+print "q:" ,q1, q2, q3, q4
 
-for i in range(0,n):
-    print( "Strike: %.1f^o, Dip: %.1f^o, Rake: %.1f^o" % 
-           (stk[i], dip[i], rak[i]) )
-    dc = DoubleCouple( strike=D2R*stk[i], dip=D2R*dip[i], rake=D2R*rak[i] )
-    print "pbt = "
-    print dc.pbt
-    print "moment tensor = "
-    print dc.MTmat()
+# test the moment tensor output
+print "Mij:"
+print dc.M()
+
+print""
+
+sys.exit()
+
 
 ###########################################################

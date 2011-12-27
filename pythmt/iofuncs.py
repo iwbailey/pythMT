@@ -8,9 +8,9 @@
 # Author: Iain William Bailey
 # Created: Wed Dec 21 10:00:03 2011 (-0800)
 # Version: 1
-# Last-Updated: Wed Dec 21 10:36:23 2011 (-0800)
+# Last-Updated: Tue Dec 27 14:36:49 2011 (-0800)
 #           By: Iain William Bailey
-#     Update #: 6
+#     Update #: 48
 
 # Change Log:
 # 
@@ -25,7 +25,7 @@ import numpy as NP
 from math import sqrt, pi
 
 from momenttensor import SymMT
-from doublecouple import sdr2smt
+from doublecouple import DoubleCouple, sdr2smt
 
 #--------------------------------------------------
 def readpsmecaSm( thisline , lcount=1):
@@ -95,20 +95,29 @@ def readPsmecaList( istream ):
     return mtlist
 
 #--------------------------------------------------
-def readSDRfile( istream ):
+def read_sdr( istream ):
     """
     From an input file or stdin, read a list of focal mechanisms in
     strike/dip/rake form
 
     lon/lat/depth/strike/dip/rake/mag
     """
+
     lcount = 0
     mtlist = []
 
     # get data in numpy array
-    data = NP.genfromtxt( istream, usecols=(0, 1, 2, 3, 4, 5, 6) ) #, autostrip=True )
+    try:
+        data = NP.loadtxt( istream, usecols=(0, 1, 2, 3, 4, 5, 6) ) #, autostrip=True )
+    except IndexError:
+        print >> sys.stderr, "Error: Require 7 columns: lon/lat/depth/strike/dip/rake/mag"
+        return
 
+    # Force 2d array and count the number of lines
+    data = NP.array( data, ndmin = 2 )
     nline = NP.size( data, 0 )
+
+    # loop through each line
     for i in range(0,nline):
 
         # get variables
@@ -118,16 +127,15 @@ def readSDRfile( istream ):
 
         #TODO: error checking 
 
-        # Make a moment tensor object
-        MT = SymMT( c = hypo, h = hypo,
-                    strike = sdr[0], dip = sdr[1], rake=sdr[2],
-                    mag = mag )
+        # Make a double couple object
+        MT = DoubleCouple( c=hypo, h=hypo,
+                           strike = sdr[0], dip = sdr[1], rake=sdr[2],
+                           mag=mag )
 
         mtlist.append( MT )
         
     return mtlist
-#--------------------------------------------------
-
+    
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as

@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Wed Dec 21 12:12:08 2011 (-0800)
+# Last-Updated: Tue Dec 27 14:52:24 2011 (-0800)
 #           By: Iain William Bailey
-#     Update #: 538
+#     Update #: 594
 
 # Commentary:
 #
@@ -37,6 +37,11 @@ import numpy as NP
 from numpy import sin, cos
 from  math import sqrt, log10, atan2, pi
 import sys
+
+# Constants
+EPS = 1e-8 # effective zero for accuracy checks
+
+
 
 # FUNCTIONS ##################################################################
 
@@ -64,7 +69,7 @@ def voigt2mat( v ):
             [ v[4], v[3], v[2] ] ])
 
 #---------------------------------------------------------------------
-def mat2voight( M ):
+def mat2voigt( M ):
     """
     convert from symmteric matrix as Numpy array to vector with voigt
     ordering
@@ -194,7 +199,7 @@ class SymMT:
         """
         
         # convert to vector with voigt notation
-        m = mat2voight(Mmat)
+        m = mat2voigt(Mmat)
 
         # get the norm
         norm = voigtnorm(m)
@@ -390,7 +395,7 @@ class SymMT:
         Frohlich (1995), "Characteristics of well determined... " PEPI 
         Kagan (2009), "On the geometric complexity..." PEPI
 
-        This was incorrectly defined by a fact of -0.5 in Bailey et al (2009) GJI
+        This was incorrectly defined by a factor of -0.5 in Bailey et al (2009) GJI
         """
         M = self.getSMTmat()
         
@@ -529,8 +534,114 @@ class SymMT:
 #         # do the rotation
 #         self.rotate( R )
 
-#         return
-# #
+###############################################################################
+
+class EigMT:
+    """
+    class that stores moment tensor in its eigen decomposition format
+    """
+    def __init__(self
+                 , m = [-1, 0, 1, 0, 0, 0]  # moment tensor in vector form
+                 , p = None # 3x1 numpy array for p-axis vector
+                 , t = None # 3x1 numpy array for t-axis vector
+                 , pbtvals = None # 1x3 numpy array 
+                 , c = None # centroid location
+                 , h = None  # hypocenter location
+                 ):
+        """
+        Constructor for moment tensor stored in its eigen decomposition
+        """ 
+
+        # set orientation and size part
+        if ( p != None and t !=None, pbtvals != None ):
+            # Set directly from arguments
+
+            # check p and t are orthogonal
+            if( NP.abs( NP.dot( p,t ) ) > EPS ):
+                print >> sys.stderr, "P and T-axes are not orthogonal"
+                sys.exit()
+
+            # make the orientation part
+            b = NP.cross( t, p ) # make such that p x b = t 
+            self.pbt = NP.c_[ p, b, t ] # numpy 3x3 array
+
+            # size part
+            self.pbtvals = pbtvals  # nupy 3x1 array
+
+        else:
+            # convert from matrix vector representation
+            Mij = voigt2mat( m )
+            (self.pbt, self.pbtvals) = mateig( Mij )
+
+        # set position
+        if c == None and h == None :
+            # default position 
+            h = NP.array( [0.0, 0.0, 0.0] )
+        if c == None: c = h
+        if h == None: h = c
+        self.c = c
+        self.h = h
+
+     # --------------------------------------------------
+    def p( self, i=None ):
+        """
+        Get the vector for the p-axis or a component
+        """
+        if( i==None ):
+            # no indices defined, return a numpy array
+            return self.pbt[:,0]
+        else:
+            return self.pbt[i,0]
+
+    # --------------------------------------------------
+    def b( self, i=None ):
+        """
+        Get the vector for the b-axis or a component
+        """
+        if( i==None ):
+            # no indices defined, return a numpy array
+            return self.pbt[:,1]
+        else:
+            return self.pbt[i,1]
+
+    # --------------------------------------------------
+    def t( self, i=None ):
+        """
+        Get the vector for the t-axis or a component
+        """
+        if( i==None ):
+            # no indices defined, return a numpy array
+            return self.pbt[:,2]
+        else:
+            return self.pbt[i,2]
+
+    # --------------------------------------------------
+    def M( self, i=None, j=None ):
+        """ 
+        Get full moment tensor or ij component of moment tensor; i,j =0,1,2
+        """
+        M = self.pbt * NP.diag( self.pbtvals ) * self.pbt.transpose()
+
+        if( i==None and j==None):
+            # no indices defined, return a numpy matrix
+            return M
+        else:
+            return M[ i, j ]
+
+    # --------------------------------------------------
+    def smt( self, i=None, j=None ):
+        """ 
+        Get source mechanism tensor or ij component of moment tensor; i,j =0,1,2
+        """
+        M = self.pbt * NP.diag( self.pbtvals ) * self.pbt.transpose()
+
+        if( i==None and j==None):
+            # no indices defined, return a numpy matrix
+            return M
+        else:
+            return M[ i, j ]
+
+
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
 # published by the Free Software Foundation; either version 3, or

@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Mon Dec 19 11:30:37 2011 (-0800)
 # Version: 1
-# Last-Updated: Wed Dec 21 17:00:51 2011 (-0800)
+# Last-Updated: Tue Dec 27 14:27:17 2011 (-0800)
 #           By: Iain William Bailey
-#     Update #: 102
+#     Update #: 151
 
 
 # Change Log:
@@ -29,7 +29,7 @@ from math import sqrt
 # import sys
 
 # other libs, must be in path
-from momenttensor import voigt2mat, mateig
+from momenttensor import EigMT, voigt2mat, mateig, mag2m0
 from quaternions import quatn as quat
 
 # FUNCTIONS ##################################################
@@ -98,10 +98,11 @@ def dcquat( dc0, dc1 ):
     Get the quaternions describing rotation from one double couple to
     another.  dc0 is the one we're rotating from.
     """
-    q0 = quat( dc0.pbt )  # make quaternions based on pbt as a rotation matrix
-    q1 = quat( dc1.pbt )
 
-    # get the difference
+    q0 = quat( A=dc0.pbt )  # make quaternions based on pbt as a rotation matrix
+    q1 = quat( A=dc1.pbt )
+
+    # quaternion for rotation from dc0 to dc1 is the same as inverse of dc0 then dc1
     qdiff = q1*q0.conjugate()   # equivelent to q1 then q0
     
     # return the four different rotations
@@ -109,8 +110,8 @@ def dcquat( dc0, dc1 ):
 
 ##############################################################
 
-# Python class representing a double-couple
-class DoubleCouple:
+# Python class representing a double-couple, inherited from moment tensor
+class DoubleCouple( EigMT ):
     """
     A double couple defined by the orientation of its P and T axes.
     The default is located at [0,0,0] with p-axis in vertical(r)
@@ -120,8 +121,8 @@ class DoubleCouple:
     # -------------------------------------------------- 
     # Default Constructor,
     def __init__( self 
-                  , p = NP.array([1,0,0]) # vector for p-axis 
-                  , t = NP.array([0,0,1]) # vector for t-axis
+                  , p = NP.array([1,0,0], dtype=float ) # vector for p-axis 
+                  , t = NP.array([0,0,1], dtype=float ) # vector for t-axis
                   , strike = None, dip = None, rake = None # fault params in radians
                   , m0 = 1
                   , c = None # centroid location
@@ -129,51 +130,42 @@ class DoubleCouple:
                   , mag = None
                   ):
         """
-        Default constructor
+        Constructor for double-couple class
         """
 
-        self.EPS = 1e-8 # accuracy for checks
-
-        # set orientation of double-couple
+        # set orientation of double-couple from strike, dip and rake
         if strike != None and dip != None and rake != None:
             # if the strike, dip and rake are set, use them
             (p, t) = sdr2ptax( strike, dip, rake)
-        else:
-            # check p and t are orthogonal
-            if( NP.abs( NP.dot( p,t ) ) > self.EPS ):
-                print >> sys.stderr, "P and T-axes are not orthogonal"
-                sys.exit()
-
-        b = NP.cross( t, p ) # make such that p x b = t 
-        self.pbt = NP.c_[ p, b, t ]
 
         # set mag of double couple as scalar moment
         if mag != None: self.m0 = mag2m0( mag )
         else: self.m0 = m0
 
-        # set position of double-couple
-        if c == None and h == None :
-            # default position 
-            h = NP.array( [0.0, 0.0, 0.0] )
-        if c == None: c = h
-        if h == None: h = c
-        self.c = c
-        self.h = h
+        # add the double couple constraint to the moment tensor rep
+        pbtvals = NP.array( [ -m0, 0.0, m0 ] )
+
+        # initialize the moment tensor part
+        EigMT.__init__( self, p=p, t=t, pbtvals=pbtvals, c=c, h=h )
 
     # -------------------------------------------------- 
-    def MTmat( self ):
+    def quats( self ):
         """
-        Get the moment tensor in matrix form
+        Get the 4 quaternions describing rotation from the reference
+        orientation where p = (1,0,0), t=(0,0,1)
         """
-        U = NP.zeros( (3,3) )
-        U[0,0] = -1*self.m0 # size of the p axis
-        U[2,2] = self.m0 # size of t axis
+        # get direct mapping from rotation matrix
+        q0 = quat( A=self.pbt )
 
-        # p, t, b axes orientations are a rotation matrix
-        return NP.dot( NP.dot( self.pbt, U ), self.pbt.transpose() )
- 
-    # -------------------------------------------------- 
-    
+        # get other four options by quaternion multiplication
+        q1, q2, q3 = q0*quat([0,1,0,0]), q0*quat([0,0,1,0]), q0*quat([0,0,0,1]) 
+
+        # force the scalar part to be positive
+        for q in ( q0, q1, q2, q3 ):
+            if q.w < 0: q*= -1
+
+        return q0, q1, q2, q3
+
 ##############################################################
 #
 # This program is free software; you can redistribute it and/or
