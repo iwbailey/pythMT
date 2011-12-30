@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Tue Dec 27 14:52:24 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 594
+# Last-Updated: Thu Dec 29 17:37:40 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 597
 
 # Commentary:
 #
@@ -375,11 +375,11 @@ class SymMT:
         return 0.5*math.sqrt(6.0)*eig2 / sqrt( NP.sum( D**2 ) )
 
     # --------------------------------------------------
-    def getFclvd( self ):
+    def f_clvd( self ):
         """
         return th fCLVD value
         """
-        (V,D) = self.getEig()
+        (V,D) = self.eig()
 
         D -= NP.sum(D)/3 # get deviatoric
 

@@ -8,9 +8,9 @@
 # Author: Iain William Bailey
 # Created: Wed Dec 21 10:00:03 2011 (-0800)
 # Version: 1
-# Last-Updated: Tue Dec 27 14:36:49 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 48
+# Last-Updated: Thu Dec 29 17:42:33 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 163
 
 # Change Log:
 # 
@@ -82,17 +82,53 @@ def readpsmecaSm( thisline , lcount=1):
 def readPsmecaList( istream ):
     """
     From an input file or stdin, read a list of moment tensors in psmeca form
+
+    Expected format
+    lon/lat/z/mrr/mtt/mpp/mrt/mrp/mtp/exp/lon0/lat0/str/anything else
     """
-    lcount = 0
+    # TODO: is there a way to read everything after the 12th column as one string?
+
+    alldata = NP.genfromtxt( istream, 
+#                             dtype = ( float, float, float, 
+#                                       float, float, float, float, float, float,
+#                                       int, float, float, int ) )
+                             dtype = [('lon', float), 
+                                      ('lat', float), 
+                                      ('z', float), 
+                                      ('mrr', float),
+                                      ('mtt', float),
+                                      ('mpp', float),
+                                      ('mrt', float),
+                                      ('mrp', float),
+                                      ('mtp', float),
+                                      ('exp', int),
+                                      ('lon0',float),
+                                      ('lat0',float),
+                                      ('label', (str,32))] )
+
+    # get the norm of the moment tensors and remove
+    allmt = NP.c_[alldata['mrr'], alldata['mtt'], alldata['mpp'], 
+                  alldata['mrt'], alldata['mrp'], alldata['mtp']]
+    norm = NP.sqrt( NP.sum( allmt**2 ,axis=1 ) + NP.sum( allmt[:,3:]**2 ,axis=1 ))
+    for j in range(0,6): allmt[:,j] /= norm
+
+    # Get the locations, assume first is centroid, second is hypocenter
+    c = NP.c_[alldata['lon'], alldata['lat'], alldata['z']]
+    h = NP.c_[alldata['lon0'], alldata['lat0'], alldata['z']]
+        
     mtlist = []
-    endstrlist = []
+    n = len(alldata)
 
-    for line in istream:
-        (mt, endstr) = readpsmecaSm( line, lcount )
-        mtlist.append( mt )
-        lcount += 1
+    # loop through
+    for i in range(0,n):
+        # create the moment tensor object
+        MT = SymMT( mhat=allmt[i,:], Norm=norm[i]*10**float(alldata['exp'][i]),
+                    c=c[i,:], h=h[i,:] )
 
-    return mtlist
+        # add to list
+        mtlist.append( MT)
+
+    return mtlist, alldata['label']
 
 #--------------------------------------------------
 def read_sdr( istream ):
