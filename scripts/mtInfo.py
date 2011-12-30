@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# getInfo.py --- 
+# mtInfo.py --- 
 # 
-# Filename: getInfo.py
+# Filename: mtInfo.py
 # Description: 
 #
 #  Read in moment tensors in a psmeca input format, extract user
@@ -10,110 +10,129 @@
 # Author: IW Bailey
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
-# Version: 1
-# Last-Updated: Sun Sep  4 17:15:12 2011 (-0700)
-#           By: Iain William Bailey
-#     Update #: 176
+# Version: 2
+# Last-Updated: Thu Dec 29 18:34:44 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 270
 #  
 # Change Log:
+# Thu Dec 29 15:38:54 2011 : Changed name of file, optparse -> argparse
 # Sun Sep  4 17:14:40 2011 (-0700): Fixed for r-theta-phi changes
-# 
 # 
 # 
 
 # Standard libraries used
 import sys
-from optparse import OptionParser
+import argparse
 from math import log10, sqrt
 import numpy as NP
 
 # Personal libraries used
-from ioFunctions import readpsmecaSm  
+from pythmt.iofuncs import readPsmecaList
 
 # constants 
 sqrt2 = sqrt(2.0)
 invs2= 1/sqrt2
 
+#--------------------------------------------------
 # get command line options
-parser = OptionParser()
-parser.add_option("--all",action="store_true", dest="all", default=False,
-                  help="Print all with other fields added on end")
-parser.add_option("--pos",action="store_true", dest="pos", default=False,
-                  help="Get position")
-parser.add_option("--smt",action="store_true", dest="smt", default=False,
-                  help="Get source mechanism tensor in rr/tt/ff/rt/rf/tf order")
-parser.add_option("--m0",action="store_true", dest="m0", default=False,
-                  help="Get scalar moment")
-parser.add_option("--mw",action="store_true", dest="mw", default=False,
-                  help="Get moment magnitude")
-parser.add_option("--lognm",action="store_true", dest="lognm", default=False,
-                  help="Get log_10 of the norm of the tensor")
-parser.add_option("--fclvd",action="store_true", dest="fclvd", default=False,
-                  help="Get f_clvd")
-parser.add_option("--Gamma",action="store_true", dest="gamma", default=False,
-                  help="Get Gamma (CLVD measure)")
-parser.add_option("--mrr",action="store_true", dest="mrr", default=False,
-                  help="Get M_rr/||M||")
-parser.add_option("--check",action="store_true", dest="check", default=False,
-                  help="Random used for debugging")
-(opt, args)=parser.parse_args()
+parser = argparse.ArgumentParser( 
+    description='Extract quantities from a psmeca style input file' )
 
-if (not opt.all and 
-    not opt.pos and 
-    not opt.smt and
-    not opt.m0 and 
-    not opt.mw and 
-    not opt.lognm and 
-    not opt.fclvd and
-    not opt.mrr and 
-    not opt.gamma and
-    not opt.check ): 
-    sys.stderr.write( "Nothing reqested.  Exiting...\n" )
+parser.add_argument('ifile', nargs='?', type=argparse.FileType('r'), 
+                    default=sys.stdin, 
+                    help = "Input file, psmeca -Sm format [stdin]")
+
+parser.add_argument('ofile', nargs='?', type=argparse.FileType('w'), 
+                    default=sys.stdout, 
+                    help = "Output file. [stdout]")
+
+parser.add_argument("--repin",action="store_true", dest="inout", default=False,
+                  help="Repeat input data with other fields added on end")
+parser.add_argument("--pos",action="store_true", dest="pos", default=False,
+                  help="Get position")
+parser.add_argument("--smt",action="store_true", dest="smt", default=False,
+                  help="Get source mechanism tensor in rr/tt/ff/rt/rf/tf order")
+parser.add_argument("--m0",action="store_true", dest="m0", default=False,
+                  help="Get scalar moment")
+parser.add_argument("--mw",action="store_true", dest="mw", default=False,
+                  help="Get moment magnitude")
+parser.add_argument("--lognm",action="store_true", dest="lognm", default=False,
+                  help="Get log_10 of the norm of the tensor")
+parser.add_argument("--fclvd",action="store_true", dest="fclvd", default=False,
+                  help="Get f_clvd")
+parser.add_argument("--Gamma",action="store_true", dest="gamma", default=False,
+                  help="Get Gamma (CLVD measure)")
+parser.add_argument("--frr",action="store_true", dest="frr", default=False,
+                  help="Get M_rr/max(P,T)")
+
+parser.add_argument("-v" , "--verbose", action="store_true", dest="isVb", default=False,
+                    help="Verbose output")
+
+args=parser.parse_args()
+
+#--------------------------------------------------
+
+# check some info was provided
+if args.ifile.isatty():
+    print >> sys.stderr, "Error: No ifile and nothing in stdin. Exiting..."
     sys.exit()
 
-# read in from stdin assuming psmeca format
-Ndata = 0
-while 1:
-    thisline = sys.stdin.readline()
+# # read the input
+# if args.inout : 
+#     block = args.ifile.read();
+#     args.ifile.seek(0)
 
-    if thisline != '':
+# read the input into moment tensors
+(mtlist, labels, alltxt) = readPsmecaList( args.ifile , True)
 
-        # Read line as SymMT object
-        MT, extra = readpsmecaSm( thisline )
-        Ndata += 1
+# loop through all
+n = len(mtlist)
+if( args.isVb ): print "Read %i moment tensors" % n
 
-        # output the original line with faulting style tacked on the end
-        if opt.all:
-            sys.stdout.write("%-s " % thisline.rstrip('\n') )
-        elif opt.pos:
-            sys.stdout.write("%-8.4f %8.4f %6.2f " %  (MT.c[0],MT.c[1],MT.c[2]) )
+sth=False
 
-        if opt.smt:
-            # get tensor components, r = up, t = south, f = east
-            mrr, mtt, mff = MT.mhat[0], MT.mhat[1], MT.mhat[2]
-            mrt, mrf, mtf = MT.mhat[5], MT.mhat[4], MT.mhat[3]
-            sys.stdout.write("%-8.6f %8.6f %8.6f %8.6f %8.6f %8.6f" %  
+for i in range(0,n):
+    
+    # output the original line 
+    if args.inout:
+        sth = True
+        args.ofile.write( alltxt[i] )
+    if args.pos: 
+        # output the position
+        sth = True
+        args.ofile.write("%-8.4f %8.4f %6.2f " %  (mtlist[i].c[0],mtlist[i].c[1],mtlist[i].c[2]) )
+
+    if args.smt:
+        # output the source mech tensor
+        sth = True
+        # get tensor components, r = up, t = south, f = east
+        mrr, mtt, mff = mtlist[i].mhat[0], mtlist[i].mhat[1], mtlist[i].mhat[2]
+        mrt, mrf, mtf = mtlist[i].mhat[5], mtlist[i].mhat[4], mtlist[i].mhat[3]
+        args.ofile.write("%-9.6f %9.6f %9.6f %9.6f %9.6f %9.6f " %  
                              ( mrr, mtt, mff, mrt, mrf, mtf ))
-        if opt.m0:
-            sys.stdout.write("%-8.6e " %  MT.getM0() )
-        if opt.mw:
-            sys.stdout.write("%-6.3f " %  MT.getMw() )
-        if opt.lognm:
-            sys.stdout.write("%-5.3f " %  log10(MT.Norm) )
-        if opt.fclvd:
-            sys.stdout.write("%-5.3f " %  MT.getFclvd() )
-        if opt.gamma:
-            sys.stdout.write("%-5.3f " %  MT.getGamma() )
-        if( opt.mrr ):
-            (tval, t, bval, b, pval, p) = MT.getPTB()
-            sys.stdout.write("%5.3f " %  ( MT.Norm*MT.smt(0,0)/NP.max([tval,-pval]) ) )
-        if opt.check:
-            # if( sqrt2*MT.mhat[2] > 1 ): 
-            #     print NP.sum( MT.mhat[0:3]*MT.mhat[0:3] ) + 2*NP.sum( MT.mhat[3:6]*MT.mhat[3:6] )
-            print MT.mhat[0:3]
-#                print thisline.rstrip('\n') 
-            continue
-        sys.stdout.write("\n")
+    if args.m0:
+        sth = True
+        args.ofile.write("%-8.6e " %  mtlist[i].M0() )
+    if args.mw:
+        sth = True
+        args.ofile.write("%-6.3f " %  mtlist[i].Mw() )
+    if args.lognm:
+        sth = True
+        args.ofile.write("%-6.3f " %  log10(mtlist[i].Norm) )
+    if args.fclvd:
+        sth = True
+        args.ofile.write("%-6.3f " %  mtlist[i].f_clvd() )
+    if args.gamma:
+        sth = True
+        args.ofile.write("%-6.3f " %  mtlist[i].Gamma() )
+    if( args.frr ):
+        sth = True
+        (tval, t, bval, b, pval, p) = mtlist[i].pbt()
+        mrr =  mtlist[i].Norm*mtlist[i].smt(0,0)
+        args.ofile.write("%6.3f " %  ( mrr/NP.max([tval,-pval]) ) )
+
+    if sth: args.ofile.write("\n")
 
     else: break
             
@@ -135,4 +154,4 @@ while 1:
 # Floor, Boston, MA 02110-1301, USA.
 # 
 ###########################################################
-# getInfo.py ends here
+# mtInfo.py ends here

@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Thu Dec 29 17:37:40 2011 (-0800)
+# Last-Updated: Thu Dec 29 18:05:40 2011 (-0800)
 #           By: Iain Bailey
-#     Update #: 597
+#     Update #: 603
 
 # Commentary:
 #
@@ -285,14 +285,14 @@ class SymMT:
         return pval, p, bval, b, tval, t
 
     # --------------------------------------------------
-    def getMhatIso( self ):
+    def iso_smt( self ):
         """
         Get the isotropic component of the normalised tensor
         """
         return NP.sum( self.mhat[0:3] ) / 3
 
     # --------------------------------------------------
-    def getIso( self ):
+    def iso( self ):
         """
         Get the isotropic component of the tensor
         """
@@ -386,7 +386,7 @@ class SymMT:
         return -1.0 * D[1] / max( [ abs(D[0]), abs(D[2]) ] )
 
     # --------------------------------------------------
-    def getGamma( self ):
+    def Gamma( self ):
         """ 
         Return Kagan's gamma value (esentially the determinant) which
         measures the CLVD size.
@@ -397,9 +397,9 @@ class SymMT:
 
         This was incorrectly defined by a factor of -0.5 in Bailey et al (2009) GJI
         """
-        M = self.getSMTmat()
+        M = self.smt()
         
-        M -= self.getMhatIso()*NP.eye(3) # get deviatoric
+        M -= self.iso_smt()*NP.eye(3) # get deviatoric
 
         norm = NP.sqrt( NP.sum( M*M ) )
         det = NP.linalg.det(M)

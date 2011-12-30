@@ -8,9 +8,9 @@
 # Author: Iain William Bailey
 # Created: Wed Dec 21 10:00:03 2011 (-0800)
 # Version: 1
-# Last-Updated: Thu Dec 29 17:42:33 2011 (-0800)
+# Last-Updated: Thu Dec 29 18:54:35 2011 (-0800)
 #           By: Iain Bailey
-#     Update #: 163
+#     Update #: 195
 
 # Change Log:
 # 
@@ -86,12 +86,11 @@ def readPsmecaList( istream ):
     Expected format
     lon/lat/z/mrr/mtt/mpp/mrt/mrp/mtp/exp/lon0/lat0/str/anything else
     """
-    # TODO: is there a way to read everything after the 12th column as one string?
+
+    # read everything
+    alltxt = NP.genfromtxt( istream, delimiter='\n' , dtype=str)
 
     alldata = NP.genfromtxt( istream, 
-#                             dtype = ( float, float, float, 
-#                                       float, float, float, float, float, float,
-#                                       int, float, float, int ) )
                              dtype = [('lon', float), 
                                       ('lat', float), 
                                       ('z', float), 
@@ -111,6 +110,7 @@ def readPsmecaList( istream ):
                   alldata['mrt'], alldata['mrp'], alldata['mtp']]
     norm = NP.sqrt( NP.sum( allmt**2 ,axis=1 ) + NP.sum( allmt[:,3:]**2 ,axis=1 ))
     for j in range(0,6): allmt[:,j] /= norm
+    print allmt
 
     # Get the locations, assume first is centroid, second is hypocenter
     c = NP.c_[alldata['lon'], alldata['lat'], alldata['z']]
@@ -128,7 +128,7 @@ def readPsmecaList( istream ):
         # add to list
         mtlist.append( MT)
 
-    return mtlist, alldata['label']
+    return mtlist, alldata['label'], alltxt
 
 #--------------------------------------------------
 def read_sdr( istream ):

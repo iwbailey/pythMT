@@ -12,10 +12,11 @@ from iofuncs import readPsmecaList
 
 ifname = "../../sample_data/socal_cmts.psmeca"
 
-mtlist, labels = readPsmecaList( ifname ) 
+mtlist, labels, alltxt = readPsmecaList( ifname ) 
 
 nmt = len(mtlist)
 print "read ",nmt, "tensors"
+
 
 # loop through each 
 for i in range(0,nmt):
