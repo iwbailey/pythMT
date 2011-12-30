@@ -8,9 +8,9 @@
 # Author: Iain William Bailey
 # Created: Wed Dec 21 10:00:03 2011 (-0800)
 # Version: 1
-# Last-Updated: Thu Dec 29 18:54:35 2011 (-0800)
-#           By: Iain Bailey
-#     Update #: 195
+# Last-Updated: Fri Dec 30 12:14:57 2011 (-0800)
+#           By: Iain William Bailey
+#     Update #: 231
 
 # Change Log:
 # 
@@ -27,56 +27,78 @@ from math import sqrt, pi
 from momenttensor import SymMT
 from doublecouple import DoubleCouple, sdr2smt
 
-#--------------------------------------------------
-def readpsmecaSm( thisline , lcount=1):
-    """
-    Take a string as an input argument.  The string should be a psmeca
-    entry.  Return a moment tensor object
+# #--------------------------------------------------
+# def readpsmecaSm( thisline , lcount=1):
+#     """
+#     Take a string as an input argument.  The string should be a psmeca
+#     entry.  Return a moment tensor object
 
-    expected input file: 
-    x, y, z, mrr, mtt, mff, mrt, mrf, mtf, exp
-    r = up, t is south, f is east
+#     expected input file: 
+#     x, y, z, mrr, mtt, mff, mrt, mrf, mtf, exp
+#     r = up, t is south, f is east
 
-    the last three parts (lon', lat', id) and anything after are
-    output as a string
-    """
+#     the last three parts (lon', lat', id) and anything after are
+#     output as a string
+#     """
 
-    # Get matrix of floats without spaces
-    # this will crash or get things wrong if you have tabs ('\t') with no spaces
-    tmp = NP.array( thisline.split() )
+#     # Get matrix of floats without spaces
+#     # this will crash or get things wrong if you have tabs ('\t') with no spaces
+#     tmp = NP.array( thisline.split() )
 
-    # check the number of columns
-    nc = 9 # minimum number of required columns
-    if len( tmp ) < nc :
-        print >> sys.stderr, ( 'Line %i of input. Expecting >= %i cols, got %i' %
-                               ( lcount, nc, len(tmp) ) )
-        raise IOError(69,'Line %i of input. Expecting >= %i cols, got %i' %
-                      ( lcount, nc, len(tmp) ) )
-        return
+#     # check the number of columns
+#     nc = 9 # minimum number of required columns
+#     if len( tmp ) < nc :
+#         print >> sys.stderr, ( 'Line %i of input. Expecting >= %i cols, got %i' %
+#                                ( lcount, nc, len(tmp) ) )
+#         raise IOError(69,'Line %i of input. Expecting >= %i cols, got %i' %
+#                       ( lcount, nc, len(tmp) ) )
+#         return
 
-    # get coordinates, assume they represent the centroid
-    centroid = NP.array( [ float(tmp[0]), float(tmp[1]), float(tmp[2]) ] )
+#     # get coordinates, assume they represent the centroid
+#     centroid = NP.array( [ float(tmp[0]), float(tmp[1]), float(tmp[2]) ] )
 
-    # get mechanism values
-    mrr, mtt, mff, mrt, mrf, mtf = float(tmp[3]), float(tmp[4]), float(tmp[5]), \
-        float(tmp[6]), float(tmp[7]), float(tmp[8])
-    expon = float(tmp[9]) # exponent
+#     # get mechanism values
+#     mrr, mtt, mff, mrt, mrf, mtf = float(tmp[3]), float(tmp[4]), float(tmp[5]), \
+#         float(tmp[6]), float(tmp[7]), float(tmp[8])
+#     expon = float(tmp[9]) # exponent
 
-    # get whatever is left as a string. reinsert the spaces 
-    endstr = "";
-    for i in range(10,len(tmp)): endstr += ' ' + tmp[i] 
-    endstr = endstr.rstrip('\n')
+#     # get whatever is left as a string. reinsert the spaces 
+#     endstr = "";
+#     for i in range(10,len(tmp)): endstr += ' ' + tmp[i] 
+#     endstr = endstr.rstrip('\n')
     
-    # get tensor norm without exponent
-    norm = sqrt( mrr**2 + mtt**2 + mff**2 + 2*( mrt**2 + mrf**2 + mtf**2 ) )
+#     # get tensor norm without exponent
+#     norm = sqrt( mrr**2 + mtt**2 + mff**2 + 2*( mrt**2 + mrf**2 + mtf**2 ) )
 
-    # Get the normalised tensor
-    m = NP.array( [mrr, mtt, mff, mtf, mrf, mrt] )/norm 
+#     # Get the normalised tensor
+#     m = NP.array( [mrr, mtt, mff, mtf, mrf, mrt] )/norm 
     
-    # Make a moment tensor object
-    MT = SymMT( m, norm*(10**expon), centroid )
+#     # Make a moment tensor object
+#     MT = SymMT( m, norm*(10**expon), centroid )
 
-    return MT, endstr
+#     return MT, endstr
+def psmecaSmstring2SymMT( string ):
+    
+    # convert first 12 columns into array
+    mtline = NP.fromstring( string, count=12, sep =' ', dtype=float )
+    
+    # get the location part
+    c = mtline[0:3] # assume lon/lat/depth are centroid
+    h = NP.array( [mtline[10], mtline[11], mtline[2]] ) # assume second lon/lat are hypocenter
+
+    # get moment tensor part 
+    mhat = mtline[3:9]
+    exp = mtline[9]
+
+    # remove the norm, take care with off diagonals, but save it
+    norm = NP.sqrt( NP.sum( mhat**2 ) + NP.sum( mhat[3:]**2 ) )
+    mhat /= norm
+    norm *= 10**exp
+        
+    # make the moment tensor object
+    return SymMT( mhat=mhat, Norm=norm, c=c, h=h )
+    
+
 
 #--------------------------------------------------
 def readPsmecaList( istream ):
@@ -87,48 +109,20 @@ def readPsmecaList( istream ):
     lon/lat/z/mrr/mtt/mpp/mrt/mrp/mtp/exp/lon0/lat0/str/anything else
     """
 
+    mtlist=[] # this will be the output list
+
     # read everything
     alltxt = NP.genfromtxt( istream, delimiter='\n' , dtype=str)
+    try: 
+        istream.close()
 
-    alldata = NP.genfromtxt( istream, 
-                             dtype = [('lon', float), 
-                                      ('lat', float), 
-                                      ('z', float), 
-                                      ('mrr', float),
-                                      ('mtt', float),
-                                      ('mpp', float),
-                                      ('mrt', float),
-                                      ('mrp', float),
-                                      ('mtp', float),
-                                      ('exp', int),
-                                      ('lon0',float),
-                                      ('lat0',float),
-                                      ('label', (str,32))] )
-
-    # get the norm of the moment tensors and remove
-    allmt = NP.c_[alldata['mrr'], alldata['mtt'], alldata['mpp'], 
-                  alldata['mrt'], alldata['mrp'], alldata['mtp']]
-    norm = NP.sqrt( NP.sum( allmt**2 ,axis=1 ) + NP.sum( allmt[:,3:]**2 ,axis=1 ))
-    for j in range(0,6): allmt[:,j] /= norm
-    print allmt
-
-    # Get the locations, assume first is centroid, second is hypocenter
-    c = NP.c_[alldata['lon'], alldata['lat'], alldata['z']]
-    h = NP.c_[alldata['lon0'], alldata['lat0'], alldata['z']]
-        
-    mtlist = []
-    n = len(alldata)
-
-    # loop through
+    # loop through all tensors
+    n = len(alltxt)
     for i in range(0,n):
-        # create the moment tensor object
-        MT = SymMT( mhat=allmt[i,:], Norm=norm[i]*10**float(alldata['exp'][i]),
-                    c=c[i,:], h=h[i,:] )
+        mtlist.append( psmecaSmstring2SymMT( alltxt[i] ) )
 
-        # add to list
-        mtlist.append( MT)
-
-    return mtlist, alldata['label'], alltxt
+    
+    return mtlist, alltxt
 
 #--------------------------------------------------
 def read_sdr( istream ):

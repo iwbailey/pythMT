@@ -11,9 +11,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 2
-# Last-Updated: Thu Dec 29 18:34:44 2011 (-0800)
-#           By: Iain Bailey
-#     Update #: 270
+# Last-Updated: Fri Dec 30 12:16:07 2011 (-0800)
+#           By: Iain William Bailey
+#     Update #: 283
 #  
 # Change Log:
 # Thu Dec 29 15:38:54 2011 : Changed name of file, optparse -> argparse
@@ -47,8 +47,8 @@ parser.add_argument('ofile', nargs='?', type=argparse.FileType('w'),
                     default=sys.stdout, 
                     help = "Output file. [stdout]")
 
-parser.add_argument("--repin",action="store_true", dest="inout", default=False,
-                  help="Repeat input data with other fields added on end")
+parser.add_argument("--paste",action="store_true", dest="isPaste", default=False,
+                  help="Paste the new values on the end")
 parser.add_argument("--pos",action="store_true", dest="pos", default=False,
                   help="Get position")
 parser.add_argument("--smt",action="store_true", dest="smt", default=False,
@@ -78,26 +78,21 @@ if args.ifile.isatty():
     print >> sys.stderr, "Error: No ifile and nothing in stdin. Exiting..."
     sys.exit()
 
-# # read the input
-# if args.inout : 
-#     block = args.ifile.read();
-#     args.ifile.seek(0)
-
 # read the input into moment tensors
-(mtlist, labels, alltxt) = readPsmecaList( args.ifile , True)
+(mtlist, alltxt) = readPsmecaList( args.ifile )
 
 # loop through all
 n = len(mtlist)
 if( args.isVb ): print "Read %i moment tensors" % n
 
-sth=False
+sth=False # flag so we write a new line
 
 for i in range(0,n):
     
     # output the original line 
-    if args.inout:
+    if args.isPaste:
         sth = True
-        args.ofile.write( alltxt[i] )
+        args.ofile.write( "%s " % alltxt[i] )
     if args.pos: 
         # output the position
         sth = True
@@ -116,16 +111,16 @@ for i in range(0,n):
         args.ofile.write("%-8.6e " %  mtlist[i].M0() )
     if args.mw:
         sth = True
-        args.ofile.write("%-6.3f " %  mtlist[i].Mw() )
+        args.ofile.write("%6.3f " %  mtlist[i].Mw() )
     if args.lognm:
         sth = True
-        args.ofile.write("%-6.3f " %  log10(mtlist[i].Norm) )
+        args.ofile.write("%6.3f " %  log10(mtlist[i].Norm) )
     if args.fclvd:
         sth = True
-        args.ofile.write("%-6.3f " %  mtlist[i].f_clvd() )
+        args.ofile.write("%6.3f " %  mtlist[i].f_clvd() )
     if args.gamma:
         sth = True
-        args.ofile.write("%-6.3f " %  mtlist[i].Gamma() )
+        args.ofile.write("%6.3f " %  mtlist[i].Gamma() )
     if( args.frr ):
         sth = True
         (tval, t, bval, b, pval, p) = mtlist[i].pbt()
@@ -133,8 +128,9 @@ for i in range(0,n):
         args.ofile.write("%6.3f " %  ( mrr/NP.max([tval,-pval]) ) )
 
     if sth: args.ofile.write("\n")
-
-    else: break
+    else: 
+        print "Nothing requested"
+        sys.exit()
             
 ###########################################################
 #

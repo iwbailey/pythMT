@@ -12,7 +12,7 @@ from iofuncs import readPsmecaList
 
 ifname = "../../sample_data/socal_cmts.psmeca"
 
-mtlist, labels, alltxt = readPsmecaList( ifname ) 
+mtlist, alltxt = readPsmecaList( ifname ) 
 
 nmt = len(mtlist)
 print "read ",nmt, "tensors"
@@ -23,7 +23,6 @@ for i in range(0,nmt):
     MT = mtlist[i]
     print "\n"
     print "Line Number: \t%i" % (i+1) 
-    print "Event id: \t%s" % labels[i]
     print "Longitude: \t%.4f^o" % MT.c[0]
     print "Latitude: \t%.4f^o" % MT.c[1]
     print "Depth: \t\t%.2f km" % MT.c[2]
