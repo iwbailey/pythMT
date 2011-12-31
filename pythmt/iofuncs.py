@@ -8,9 +8,9 @@
 # Author: Iain William Bailey
 # Created: Wed Dec 21 10:00:03 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Dec 30 12:14:57 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 231
+# Last-Updated: Fri Dec 30 16:54:11 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 288
 
 # Change Log:
 # 
@@ -24,60 +24,42 @@ import sys
 import numpy as NP
 from math import sqrt, pi
 
-from momenttensor import SymMT
+from momenttensor import SymMT, EigMT
 from doublecouple import DoubleCouple, sdr2smt
 
-# #--------------------------------------------------
-# def readpsmecaSm( thisline , lcount=1):
-#     """
-#     Take a string as an input argument.  The string should be a psmeca
-#     entry.  Return a moment tensor object
+#--------------------------------------------------
+def psmeca2SymMT( string ):
+    """
+    Convert from a psmeca -Sm format string to a SymMT object
+    """ 
 
-#     expected input file: 
-#     x, y, z, mrr, mtt, mff, mrt, mrf, mtf, exp
-#     r = up, t is south, f is east
-
-#     the last three parts (lon', lat', id) and anything after are
-#     output as a string
-#     """
-
-#     # Get matrix of floats without spaces
-#     # this will crash or get things wrong if you have tabs ('\t') with no spaces
-#     tmp = NP.array( thisline.split() )
-
-#     # check the number of columns
-#     nc = 9 # minimum number of required columns
-#     if len( tmp ) < nc :
-#         print >> sys.stderr, ( 'Line %i of input. Expecting >= %i cols, got %i' %
-#                                ( lcount, nc, len(tmp) ) )
-#         raise IOError(69,'Line %i of input. Expecting >= %i cols, got %i' %
-#                       ( lcount, nc, len(tmp) ) )
-#         return
-
-#     # get coordinates, assume they represent the centroid
-#     centroid = NP.array( [ float(tmp[0]), float(tmp[1]), float(tmp[2]) ] )
-
-#     # get mechanism values
-#     mrr, mtt, mff, mrt, mrf, mtf = float(tmp[3]), float(tmp[4]), float(tmp[5]), \
-#         float(tmp[6]), float(tmp[7]), float(tmp[8])
-#     expon = float(tmp[9]) # exponent
-
-#     # get whatever is left as a string. reinsert the spaces 
-#     endstr = "";
-#     for i in range(10,len(tmp)): endstr += ' ' + tmp[i] 
-#     endstr = endstr.rstrip('\n')
+    # convert first 12 columns into array
+    mtline = NP.fromstring( string, count=12, sep =' ', dtype=float )
     
-#     # get tensor norm without exponent
-#     norm = sqrt( mrr**2 + mtt**2 + mff**2 + 2*( mrt**2 + mrf**2 + mtf**2 ) )
+    # get the location part
+    c = mtline[0:3] # assume lon/lat/depth are centroid
+    h = NP.array( [mtline[10], mtline[11], mtline[2]] ) # assume second lon/lat are hypocenter
 
-#     # Get the normalised tensor
-#     m = NP.array( [mrr, mtt, mff, mtf, mrf, mrt] )/norm 
+    # get moment tensor part, voigt notation 
+    # [mrr mtt mpp mrt mrp mtp] -> [mrr mtt mpp mtp mrp mrt]
+    mhat = NP.r_[mtline[3:6], mtline[8], mtline[7], mtline[6]] 
+    exp = mtline[9]
     
-#     # Make a moment tensor object
-#     MT = SymMT( m, norm*(10**expon), centroid )
+    # remove the norm, take care with off diagonals
+    norm = NP.sqrt( NP.sum( mhat**2 ) + NP.sum( mhat[3:]**2 ) )
+    mhat /= norm
 
-#     return MT, endstr
-def psmecaSmstring2SymMT( string ):
+    # get the true norm
+    norm *= 10**exp
+
+    # make the moment tensor object
+    return SymMT( mhat=mhat, Norm=norm, c=c, h=h )
+    
+#--------------------------------------------------
+def psmeca2EigMT( string ):
+    """
+    Convert from a psmeca -Sm format string to a EigMT object
+    """ 
     
     # convert first 12 columns into array
     mtline = NP.fromstring( string, count=12, sep =' ', dtype=float )
@@ -86,27 +68,25 @@ def psmecaSmstring2SymMT( string ):
     c = mtline[0:3] # assume lon/lat/depth are centroid
     h = NP.array( [mtline[10], mtline[11], mtline[2]] ) # assume second lon/lat are hypocenter
 
-    # get moment tensor part 
-    mhat = mtline[3:9]
+    # get moment tensor part, voigt notation
     exp = mtline[9]
+    # [mrr mtt mpp mrt mrp mtp] -> [mrr mtt mpp mtp mrp mrt]
+    m = ( NP.r_[mtline[3:6], mtline[8], mtline[7], mtline[6]] )* 10**exp
 
-    # remove the norm, take care with off diagonals, but save it
-    norm = NP.sqrt( NP.sum( mhat**2 ) + NP.sum( mhat[3:]**2 ) )
-    mhat /= norm
-    norm *= 10**exp
-        
     # make the moment tensor object
-    return SymMT( mhat=mhat, Norm=norm, c=c, h=h )
-    
+    return EigMT( m=m, c=c, h=h )
 
 
 #--------------------------------------------------
-def readPsmecaList( istream ):
+def read_psmecalist( istream , isEig=False ):
     """
     From an input file or stdin, read a list of moment tensors in psmeca form
 
     Expected format
     lon/lat/z/mrr/mtt/mpp/mrt/mrp/mtp/exp/lon0/lat0/str/anything else
+
+    if isEig is false, return list of SymMT objects, otherwise get a
+    list of EigMT objects
     """
 
     mtlist=[] # this will be the output list
@@ -115,17 +95,46 @@ def readPsmecaList( istream ):
     alltxt = NP.genfromtxt( istream, delimiter='\n' , dtype=str)
     try: 
         istream.close()
+    except:
+        tmp=1
 
     # loop through all tensors
     n = len(alltxt)
-    for i in range(0,n):
-        mtlist.append( psmecaSmstring2SymMT( alltxt[i] ) )
+
+    # check for desired output type
+    if isEig:
+        for i in range(0,n):
+            mtlist.append( psmeca2EigMT( alltxt[i] ) )
+    else:
+        for i in range(0,n):
+            mtlist.append( psmeca2SymMT( alltxt[i] ) )
 
     
     return mtlist, alltxt
 
 #--------------------------------------------------
-def read_sdr( istream ):
+def sdr2dc( string ):
+    """
+    Convert from a lon/lat/depth/strike/dip/rake/mag string to a double couple type
+    """
+    # convert first 7 columns into array
+    try:
+        data = NP.fromstring( string, count=7, sep =' ', dtype=float )
+    except IndexError:
+        print >> sys.stderr, "Error: Require 7 columns: lon/lat/depth/strike/dip/rake/mag"
+        return None
+
+    # get variables
+    hypo = data[0:3 ] # lon , lat, z
+    sdr = data[3:6]*pi/180 # in radians
+    mag = data[6]
+
+    return DoubleCouple( c=hypo, h=hypo,
+                         strike = sdr[0], dip = sdr[1], rake=sdr[2],
+                         mag=mag )
+
+#--------------------------------------------------
+def read_sdrlist( istream ):
     """
     From an input file or stdin, read a list of focal mechanisms in
     strike/dip/rake form
@@ -133,38 +142,21 @@ def read_sdr( istream ):
     lon/lat/depth/strike/dip/rake/mag
     """
 
-    lcount = 0
     mtlist = []
 
-    # get data in numpy array
-    try:
-        data = NP.loadtxt( istream, usecols=(0, 1, 2, 3, 4, 5, 6) ) #, autostrip=True )
-    except IndexError:
-        print >> sys.stderr, "Error: Require 7 columns: lon/lat/depth/strike/dip/rake/mag"
-        return
+    # read everything
+    alltxt = NP.genfromtxt( istream, delimiter='\n' , dtype=str)
+    try: 
+        istream.close()
+    except:
+        tmp=1
 
-    # Force 2d array and count the number of lines
-    data = NP.array( data, ndmin = 2 )
-    nline = NP.size( data, 0 )
+    # loop through all events
+    n = len(alltxt)
+    for i in range(0,n):
+        mtlist.append( sdr2dc( alltxt[i] ) )
 
-    # loop through each line
-    for i in range(0,nline):
-
-        # get variables
-        hypo = data[i, 0:3 ] # lon , lat, z
-        sdr = data[i, 3:6]*pi/180 # in radians
-        mag = data[i, 6]
-
-        #TODO: error checking 
-
-        # Make a double couple object
-        MT = DoubleCouple( c=hypo, h=hypo,
-                           strike = sdr[0], dip = sdr[1], rake=sdr[2],
-                           mag=mag )
-
-        mtlist.append( MT )
-        
-    return mtlist
+    return mtlist, alltxt
     
 # 
 # This program is free software; you can redistribute it and/or

@@ -6,12 +6,12 @@
 # Functions for binning a set of earthquakes, class describing that
 # bin
 #
-# Author: Iain William Bailey
+# Author: Iain W. Bailey
 # Created: Wed Dec 21 09:50:55 2011 (-0800)
 # Version: 1
-# Last-Updated: Wed Dec 21 10:35:24 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 16
+# Last-Updated: Fri Dec 30 16:10:56 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 19
 
 # Change Log:
 # 
@@ -60,7 +60,7 @@ def binMT_mag( mtlist, m1=0.0, m2=10.0, nm=10, binlocn=np.array([0.0, 0.0, 0.0])
         else:
             thismtlist = []
             for j in idx[0][:]: thismtlist.append( mtlist[j] )
-            thisbin = eqkBin( xyz=binlocn, mag=bincenters[i], eqklist=thismtlist ) 
+            thisbin = EqkBin( xyz=binlocn, mag=bincenters[i], eqklist=thismtlist ) 
             binlist.append( thisbin )
 
     return (binlist, ntot)
@@ -116,7 +116,7 @@ def binMT_xyz( mtlist # list of moment tensors
                 else:
                     thismtlist = []
                     for m in idx[0][:]: thismtlist.append( mtlist[m] )
-                    thisbin = eqkBin( xyz=np.array([ binx[i], biny[j], binz[k] ] ), 
+                    thisbin = EqkBin( xyz=np.array([ binx[i], biny[j], binz[k] ] ), 
                                       mag=binmag, eqklist=thismtlist ) 
                     binlist.append( thisbin )
 

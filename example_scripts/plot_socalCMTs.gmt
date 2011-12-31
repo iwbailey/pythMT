@@ -23,7 +23,7 @@ proj=-JM6i
 DATADIR=../sample_data
 
 # set the output filename
-ofile=socalCMTs.ps
+ofile=figures/socalCMTs.ps
 
 # set the fault file to use
 faultfile=$DATADIR/socalfaults.llz.gz
@@ -41,10 +41,10 @@ pscoast -P  $reg $proj -Dh -W1,0 -Slightblue -L239.3/32.7/244/33/50k \
 zcat $faultfile | psxy -O $reg $proj -M -W1,100 -K >> $ofile
 
 # get the earthquakes  faulting style
-cat $cmtfile | ../src/getFaultingStyle.py --pmin=60 -v > tmp.fstyle
+cat $cmtfile | mtFaultStyle.py --pmin=60 -v > tmp.fstyle
 echo "Number of CMTs in data: $(wc -l tmp.fstyle | awk '{print $1}')"
 
-# paste $cmtfile tmp.fstyle |  head
+#paste $cmtfile tmp.fstyle |  head
 
 #------------------------------------------------
 # define a function for plotting a specific faulting style a specific colour
@@ -53,11 +53,10 @@ function plotCMTs(){
     colour=$2
 
     paste $cmtfile tmp.fstyle | \
-	gawk '{if($14==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)}' F=$flag | \
+	gawk '{if($14==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$1,$2,NR)}' F=$flag | \
 	psmeca -O $reg $proj -Sm.5c -G$colour -L1 -K  >> $ofile
 
 }
-#------------------------------------------------
 #------------------------------------------------
 # define function to count the number of a faulting style and print a message
 function countCMTs(){
@@ -74,9 +73,9 @@ wc -l | awk '{print $1}')"
 # plot reverse = blue
 # plot normal = red
 # plot strike-slip = green
-names=( Oblique Reverse Normal Strike-Slip )
-flags=( 0 1 3 2 )
-cols=(yellow blue red green)
+names=( Oblique Normal Strike-Slip Reverse  )
+flags=( 0 1 2 3 )
+cols=(yellow red green blue)
 
 # plot the different faulting styles
 for i in 0 1 2 3; do 

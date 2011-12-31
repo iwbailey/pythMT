@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Thu Dec 29 18:05:40 2011 (-0800)
+# Last-Updated: Fri Dec 30 17:45:16 2011 (-0800)
 #           By: Iain Bailey
-#     Update #: 603
+#     Update #: 644
 
 # Commentary:
 #
@@ -40,7 +40,7 @@ import sys
 
 # Constants
 EPS = 1e-8 # effective zero for accuracy checks
-
+IS2 = 1/sqrt(2.0)
 
 
 # FUNCTIONS ##################################################################
@@ -106,18 +106,19 @@ def mateig( mat ):
     return ( vecs , vals )
 
 #---------------------------------------------------------------------
-def mag2m0( mag ):
+def mw2m0( mag ):
     """
     Use Hanks and Kanamori reln to compute moment
     """
     return 10**(1.5*(mag+10.7))
 
 #---------------------------------------------------------------------
-def m02mag( m0 ):
+def m02mw( m0 ):
     """
     Use Hanks and Kanamori reln to compute magnitude
     """
-    return (log10(m0)/1.5) - 10.7 
+    if m0 <= 0.0 : return None
+    else : return (log10(m0)/1.5) - 10.7 
 
 
 
@@ -155,7 +156,7 @@ class SymMT:
     # --------------------------------------------------
     # Constructor
     def __init__( self
-                  , mhat = NP.zeros( 6 )  # normalised tensor/source mech tensor
+                  , mhat = None  # normalised tensor/source mech tensor
                   , Norm = None  # norm of tensor, such that M = Norm*smt
                   , MT = None  # 3x3 numpy array option 
                   , c = NP.array( [0.0, 0.0, 0.0] )  # centroid location
@@ -167,8 +168,8 @@ class SymMT:
 
         if ( MT != None ):
             # initiate from the numpy matrix
-            __frommatrix( MT )
-        else:
+            self.__frommatrix( MT )
+        elif( mhat != None ):
             # use the vector form
             if Norm == None:
                 # case where we normalise
@@ -178,12 +179,16 @@ class SymMT:
                 # force normalisation
                 self.mhat = mhat/voigtnorm( mhat )
                 self.Norm = Norm
+        else:
+            # Default constructor
+            self.mhat = NP.zeros(6)
+            self.Norm = 0.0
 
         # magnitude not necessarily linked to moment
         if mag != None:
             self.mag = mag
         else:
-            self.mag = m02mag( sqrt(2.0)*self.Norm )
+            self.mag = m02mw( self.M0() )
 
         self.c = c # centroid lon lat depth
         self.h = h # hypocenter lon lat depth
@@ -193,9 +198,9 @@ class SymMT:
         self.rigidity = rigidity # ridgidity in GPa
         
     #--------------------------------------------------------------------
-    def __frommatrix( Mmat, c, h):
+    def __frommatrix( self, Mmat ):
         """
-        Convert a numpy array into a SymMT object
+        Get the Norm and mhat from a Moment tensor in numpy 3x3 array form
         """
         
         # convert to vector with voigt notation
@@ -240,14 +245,14 @@ class SymMT:
         """
         Get scalar moment as defined by Silver and Jordan
         """
-        return self.Norm / sqrt(2.0)
+        return IS2*self.Norm
 
     # --------------------------------------------------
     def Mw( self ):
         """
         Get moment magnitude
         """
-        return m02mag( self.M0() )
+        return m02mw( self.M0() )
 
     # --------------------------------------------------
     def eig( self ):
@@ -547,13 +552,14 @@ class EigMT:
                  , pbtvals = None # 1x3 numpy array 
                  , c = None # centroid location
                  , h = None  # hypocenter location
+                 , mag = None # magnitude
                  ):
         """
         Constructor for moment tensor stored in its eigen decomposition
         """ 
 
         # set orientation and size part
-        if ( p != None and t !=None, pbtvals != None ):
+        if ( p != None and t !=None and pbtvals != None ):
             # Set directly from arguments
 
             # check p and t are orthogonal
@@ -581,6 +587,12 @@ class EigMT:
         if h == None: h = c
         self.c = c
         self.h = h
+
+        # magnitude not necessarily linked to moment, but that is default
+        if mag == None:
+            self.mag = m02mw( self.M0() )
+        else:
+            self.mag = mag
 
      # --------------------------------------------------
     def p( self, i=None ):
@@ -620,7 +632,7 @@ class EigMT:
         """ 
         Get full moment tensor or ij component of moment tensor; i,j =0,1,2
         """
-        M = self.pbt * NP.diag( self.pbtvals ) * self.pbt.transpose()
+        M = NP.dot( self.pbt, NP.dot( NP.diag( self.pbtvals ), self.pbt.transpose() ))
 
         if( i==None and j==None):
             # no indices defined, return a numpy matrix
@@ -633,7 +645,7 @@ class EigMT:
         """ 
         Get source mechanism tensor or ij component of moment tensor; i,j =0,1,2
         """
-        M = self.pbt * NP.diag( self.pbtvals ) * self.pbt.transpose()
+        M = NP.dot( self.pbt, NP.dot( NP.diag( self.pbtvals ), self.pbt.transpose() ))
 
         if( i==None and j==None):
             # no indices defined, return a numpy matrix
@@ -641,6 +653,12 @@ class EigMT:
         else:
             return M[ i, j ]
 
+    # --------------------------------------------------
+    def M0( self ):
+        """
+        Get scalar moment 
+        """
+        return NP.sqrt( 0.5*NP.sum( self.pbtvals**2 ) )
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as

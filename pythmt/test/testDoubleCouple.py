@@ -32,14 +32,14 @@ print( "Strike: %.1f^o, Dip: %.1f^o, Rake: %.1f^o" %  (strike, dip, rake) )
 dc = DC( strike=D2R*strike, dip=D2R*dip, rake=D2R*rake )
 print "pbt:"
 print dc.pbt
+print "pbtvals:", dc.pbtvals
 
 # test the quaternion representation
 (q1, q2, q3, q4)  = dc.quats()
-print "q:" ,q1, q2, q3, q4
+print "\nq:\n" ,q1, "\n",q2, "\n",q3, "\n", q4
 
 # test the moment tensor output
-print "Mij:"
-print dc.M()
+print "\nMij:\n",dc.M()
 
 print""
 

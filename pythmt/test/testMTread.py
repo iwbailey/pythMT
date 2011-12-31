@@ -8,18 +8,18 @@ import sys
 # get file to test
 srcpath = os.path.join( os.getcwd(), '..' )
 sys.path.append( srcpath )
-from iofuncs import readPsmecaList
+from iofuncs import read_psmecalist
 
 ifname = "../../sample_data/socal_cmts.psmeca"
 
-mtlist, alltxt = readPsmecaList( ifname ) 
+mtlist, alltxt = read_psmecalist( ifname ) 
 
 nmt = len(mtlist)
 print "read ",nmt, "tensors"
 
 
-# loop through each 
-for i in range(0,nmt):
+# loop through first 5
+for i in range(0,5):
     MT = mtlist[i]
     print "\n"
     print "Line Number: \t%i" % (i+1) 
@@ -32,4 +32,7 @@ for i in range(0,nmt):
     print "Trace/3: \t%.4e dyne cm" % ((MT.M(1,1) + MT.M(2,2) + MT.M(3,3))/3)
    
 
-
+# for the first one
+print "\n\nFirst entry:"
+print "Input: ", alltxt[i]
+print "MT: \n", mtlist[i].smt(),"*", mtlist[i].Norm

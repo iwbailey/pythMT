@@ -27,7 +27,7 @@ proj=-JM6i
 DATADIR=../sample_data
 
 # set the output filename
-ofile=socalSummedFPSs.ps
+ofile=figures/socalSummedFPSs.ps
 
 # set the fault file to use
 faultfile=$DATADIR/socalfaults.llz.gz
@@ -51,7 +51,6 @@ function plotCMTs(){
     paste tmp.sum.psmeca tmp.fstyle | \
 	gawk '{if($13==F)print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)}' F=$flag | \
 	psmeca -O $reg $proj -Sm.3c -G$colour -M -C3 -L1 -K  >> $ofile
-
 }
 #------------------------------------------------
 ######################################################################
@@ -71,21 +70,21 @@ cat $eqkfile | gawk '{print($1,$2)}' | \
 # tensor in the center of each bin with a line to the moment weighted
 # location
 cat $eqkfile | \
-    ../src/mtBinSum.py --ifmt=1 \
+    mtBinSum.py --ifmt=1 \
     --x01 $xMin $xMax --y01 $yMin $yMax --nx=$nx --ny=$ny --nz=$nz -v | \
       gawk '{print($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)}' > tmp.sum.psmeca
 
 # get the faulting styles
-cat tmp.sum.psmeca | ../src/getFaultingStyle.py --pmin=60 -v > tmp.fstyle
+cat tmp.sum.psmeca | mtFaultStyle.py --pmin=60 -v > tmp.fstyle
 
 # plot the different faulting styles
 # plot oblique = yellow
 # plot reverse = blue
 # plot normal = red
 # plot strike-slip = green
-names=( Oblique Reverse Normal Strike-Slip )
-flags=( 0 1 3 2 )
-cols=(yellow blue red green)
+names=( Oblique Normal Strike-Slip Reverse )
+flags=( 0 1 2 3 )
+cols=(yellow red green blue)
 for i in 0 1 2 3; do 
     plotCMTs ${flags[i]} ${cols[i]} 
 done
@@ -100,13 +99,14 @@ psbasemap -O $reg $proj  -Ba1g1f.1SWne -K >> $ofile
 echo 1000 1000 | psxy -O $reg $proj -Sc.1  -Gwhite >> $ofile
 
 # convert to pdf
-ps2raster -A -Tfg -V $ofile
+ps2raster -A -Tegf -V $ofile
 
 # message to terminal
+echo $0: written to ${ofile%*.ps}.eps
 echo $0: written to ${ofile%*.ps}.pdf
 echo $0: written to ${ofile%*.ps}.png
 
 # clean up
-rm $ofile tmp.*
+rm $ofile tmp.sum.psmeca tmp.fstyle
 
 

@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Mon Dec 19 11:30:37 2011 (-0800)
 # Version: 1
-# Last-Updated: Tue Dec 27 14:27:17 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 151
+# Last-Updated: Fri Dec 30 17:36:43 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 169
 
 
 # Change Log:
@@ -29,7 +29,7 @@ from math import sqrt
 # import sys
 
 # other libs, must be in path
-from momenttensor import EigMT, voigt2mat, mateig, mag2m0
+from momenttensor import EigMT, SymMT, voigt2mat, mateig, mw2m0, m02mw
 from quaternions import quatn as quat
 
 # FUNCTIONS ##################################################
@@ -108,6 +108,14 @@ def dcquat( dc0, dc1 ):
     # return the four different rotations
     return qdiff, qdiff*quat([0,1,0,0]), qdiff*quat([0,0,1,0]), qdiff*quat([0,0,0,1]) 
 
+#------------------------------------------------------------
+def dc2SymMT( dc ):
+    """
+    Convert double-couple type to moment tensor
+    """
+
+    return SymMT( MT=dc.M(), mag=dc.mag, c=dc.c, h=dc.h )
+
 ##############################################################
 
 # Python class representing a double-couple, inherited from moment tensor
@@ -124,7 +132,7 @@ class DoubleCouple( EigMT ):
                   , p = NP.array([1,0,0], dtype=float ) # vector for p-axis 
                   , t = NP.array([0,0,1], dtype=float ) # vector for t-axis
                   , strike = None, dip = None, rake = None # fault params in radians
-                  , m0 = 1
+                  , m0 = None
                   , c = None # centroid location
                   , h = None  # hypocenter location
                   , mag = None
@@ -138,15 +146,22 @@ class DoubleCouple( EigMT ):
             # if the strike, dip and rake are set, use them
             (p, t) = sdr2ptax( strike, dip, rake)
 
-        # set mag of double couple as scalar moment
-        if mag != None: self.m0 = mag2m0( mag )
-        else: self.m0 = m0
+        # set scalar moment
+        if mag == None and m0 == None:
+            # default
+            m0 = 1.0
+        elif m0 == None:
+            # case where mag is given, not m0
+            m0 = mw2m0( mag )
+
+        # set magnitude
+        if mag == None: mag = m02mw( m0 )
 
         # add the double couple constraint to the moment tensor rep
         pbtvals = NP.array( [ -m0, 0.0, m0 ] )
 
         # initialize the moment tensor part
-        EigMT.__init__( self, p=p, t=t, pbtvals=pbtvals, c=c, h=h )
+        EigMT.__init__( self, p=p, t=t, pbtvals=pbtvals, c=c, h=h, mag=mag )
 
     # -------------------------------------------------- 
     def quats( self ):
@@ -165,6 +180,8 @@ class DoubleCouple( EigMT ):
             if q.w < 0: q*= -1
 
         return q0, q1, q2, q3
+
+##############################################################
 
 ##############################################################
 #

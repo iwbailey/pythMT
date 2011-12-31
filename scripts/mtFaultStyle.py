@@ -12,29 +12,36 @@
 # Author: IW Bailey
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
-# Version: 1
-# Last-Updated: Tue Sep  6 10:30:48 2011 (-0700)
-#           By: Iain William Bailey
-#     Update #: 69
+# Version: 2
+# Last-Updated: Fri Dec 30 18:03:12 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 112
 #  
 # Change Log:
-# 
+#
+# Fri Dec 30 2011: Changes in the directory structure
 # 
 # 
 # 
 
 # Standard libraries used
 import sys
+import numpy
 from numpy import sin, pi, argmax, abs
 import argparse as AP
 
 # personal libraries used, these need to be in the same directory or python path
-import ioFunctions as IO
+import pythmt.iofuncs as IO
+
+# added this step for piping to stdout
+import signal
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 
 #------------------------------
 # command line arguments
-parser = AP.ArgumentParser( description='Get the faulting style for a population of focal mechanisms' )
+parser = AP.ArgumentParser( 
+    description='Get the faulting style for a population of focal mechanisms' )
 
 parser.add_argument('ifile', nargs='?', type=AP.FileType('r'), default=sys.stdin, 
                     help = "Input file [stdin]")
@@ -45,8 +52,12 @@ parser.add_argument('ofile', nargs='?', type=AP.FileType('w'), default=sys.stdou
 parser.add_argument("--ifmt", dest ="ifmt", type=int, default=0,
                     help = "Input data format; 0=psmeca/1=strike,dip,rake [0]" )
 
+help = "Minimum plunge for an axis to be defined as vertical [take min of 3 axes]." 
 parser.add_argument("-p", "--pmin", dest="pmin", type=float, default=None ,
-                    help = "Minimum plunge for an axis to be defined as vertical [take min of 3 axes]." )
+                    help = help )
+
+parser.add_argument("--append", action="store_true", dest="isAppend", default=False,
+                    help="Append as final column of input file [False]")
 
 parser.add_argument("-v" , "--verbose", action="store_true", dest="isVb", default=False,
                     help="Verbose output [False]")
@@ -55,12 +66,17 @@ args = parser.parse_args()
 
 #------------------------------
 
+# check some info was provided
+if args.ifile.isatty():
+    print >> sys.stderr, "Error: No ifile and nothing in stdin. Exiting..."
+    sys.exit()
+
 # read the moment tensors
 if( args.ifmt == 1 ):
     if( args.isVb ): sys.stderr.write('Reading Strike/dip/rake.\n' )
-    mtlist = IO.readSDRfile( args.ifile )
+    (mtlist, alltxt) = IO.read_sdrlist( args.ifile )
 else:
-    mtlist = IO.readPsmecaList( args.ifile )
+    (mtlist, alltxt) = IO.read_psmecalist( args.ifile , isEig=True )
 
 ndata = len(mtlist)
 if( args.isVb ): sys.stderr.write('%i events read in.\n' % ndata )
@@ -80,27 +96,33 @@ for i in range(0,ndata):
 
     # get eigen solution
     # ptb rows are r; theta; phi, cols are p, b, t
-    [pbt, vals] = mtlist[i].getEig()
-  
+    pbt = mtlist[i].pbt
+
+    if( args.isAppend ):
+        args.ofile.write( "%s " % alltxt[i] )
+
     # find which axis is most vertical
     maxzi = argmax( abs( pbt[0,:] ) )
 
-    if abs(pbt[0,maxzi]) < minZ:
+    if abs( pbt[0,maxzi] ) < minZ:
         # none of the axes are vertical enough
-        sys.stdout.write("0 %-12s " % ("oblique") )
+        args.ofile.write("0 %-12s " % ("oblique") )
     elif maxzi == 0:
         # p (min) axis is most vertical
-        sys.stdout.write("1 %-12s " % ("normal") )
+        args.ofile.write("1 %-12s " % ("normal") )
     elif maxzi == 1:
         # b (intermediate) axis is most vertical
-        sys.stdout.write("2 %-12s " % ("strike-slip") )
+        args.ofile.write("2 %-12s " % ("strike-slip") )
     elif maxzi == 2:
         # t (max) axis is most vertical
-        sys.stdout.write("3 %-12s " % ("reverse") )
+        args.ofile.write("3 %-12s " % ("reverse") )
     else:
         print >>sys.stderr(), "ERROR: don't understand eig vals"
 
-    print "%9.6f %9.6f %9.6f" % (pbt[0,0],pbt[0,1],pbt[0,2])
+    pbt[0,:].tofile( args.ofile, sep=" ", format="%9.6f" )
+    args.ofile.write( " %f " % numpy.sum( pbt[0,:]**2 ) )
+    args.ofile.write("\n")
+
 sys.exit()    
             
 ###########################################################

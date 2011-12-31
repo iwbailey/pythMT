@@ -5,9 +5,9 @@
 # Author: Iain William Bailey
 # Created: Tue Dec 27 10:24:02 2011 (-0800)
 # Version: 1
-# Last-Updated: Tue Dec 27 15:43:06 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 171
+# Last-Updated: Fri Dec 30 14:48:13 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 172
 # Compatibility: 2.7.2+
 # 
 # 
@@ -58,7 +58,7 @@ def in_sdr( ifile ):
     """
     Read in from strike, dip, rake format
     """
-    mtlist = iofuncs.read_sdr( ifile )
+    mtlist = iofuncs.read_sdrlist( ifile )
     return mtlist
 
 #----------------------------------------------------------

@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Wed Dec 21 11:05:47 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 171
+# Last-Updated: Fri Dec 30 16:41:09 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 181
 
 # Change Log:
 #
@@ -42,17 +42,19 @@ class MTsum(SymMT):
         self.cumNorm = 0.0
         self.count = 0.0 # number of tensors
 
-
     # --------------------------------------------------
     def add( self, newmt ):       
         """
         Add a tensor to the sum
         """
-        summt = self.getMvec() + newmt.getMvec()
+        summt = self.mhat*self.Norm + newmt.mhat*newmt.Norm
 
         # update the location. 
-        self.c = ( self.cumNorm*self.c + newmt.Norm*newmt.c )/(self.cumNorm + newmt.Norm)
-        self.h = ( self.cumNorm*self.h + newmt.Norm*newmt.h )/(self.cumNorm + newmt.Norm)
+        self.c = ( self.cumNorm*self.c + 
+                   newmt.Norm*newmt.c )/(self.cumNorm + newmt.Norm)
+
+        self.h = ( self.cumNorm*self.h + 
+                   newmt.Norm*newmt.h )/(self.cumNorm + newmt.Norm)
 
         # update the norm
         self.Norm = sqrt( NP.sum( summt*summt ) + NP.sum( summt[2:6]*summt[2:6] ) )

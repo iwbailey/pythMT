@@ -12,9 +12,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Tue Dec 27 11:07:52 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 209
+# Last-Updated: Fri Dec 30 17:32:47 2011 (-0800)
+#           By: Iain Bailey
+#     Update #: 228
 # 
 # Change Log:
 #
@@ -28,9 +28,10 @@ import sys
 import argparse as AP
 
 # personal libraries used
-import pythmt.ioFunctions as IO
-import pythmt.EqkBin as EB
-import pythmt.SummedMomentTensor as SMT
+from pythmt.iofuncs import read_sdrlist, read_psmecalist
+import pythmt.eqkbinning as EB
+from pythmt.summed_mt import MTsum
+from pythmt.doublecouple import dc2SymMT
 
 # define constants
 progname='mtBinSum'
@@ -78,12 +79,22 @@ args = parser.parse_args()
 
 #------------------------------
 
+# check some info was provided
+if args.ifile.isatty():
+    print >> sys.stderr, "Error: No ifile and nothing in stdin. Exiting..."
+    sys.exit()
+
 # read the moment tensors
 if( args.ifmt == 1 ):
     if( args.isVb ): sys.stderr.write('Reading Strike/dip/rake.\n' )
-    mtlist = IO.readSDRfile( args.ifile )
+    (mtlist, allin) = read_sdrlist( args.ifile )
+
+    # convert
+    for i in range(0,len(mtlist)): 
+        mtlist[i] = dc2SymMT( mtlist[i] )
+
 else:
-    mtlist = IO.readPsmecaList( args.ifile )
+    (mtlist, allin) = read_psmecalist( args.ifile, isEig=False )
 
 ndata = len(mtlist)
 if( args.isVb ): sys.stderr.write('%i events read in.\n' % ndata )
@@ -136,9 +147,12 @@ for i in range(0,nbins):
         mtsumlist.append(None)
         continue
 
-    # make summed tensor and add to list
-    mtSum = SMT.MTsum()
-    for mt in binlist[i].eqklist[:]: mtSum.add( mt )
+    # make empty summed tensor and add to list
+    mtSum = MTsum()
+
+    # loop through all moment tensors in bin and add to sum
+    for mt in binlist[i].eqklist[:]: 
+        mtSum.add( mt )
 
     mtsumlist.append(mtSum)
 
@@ -150,6 +164,7 @@ for i in range(0,nbins):
 
     # get psmeca format for 1st 10 columns
     (X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) = mtsumlist[i].getPsmecaSm()
+
     args.ofile.write('%-10.6f %10.6f %6.2f %9.6f %9.6f %9.6f %9.6f %9.6f %9.6f %3i ' % 
                      ( X, Y, depth, mrr, mtt, mff, mrt, mrf, mtf, exp ) )
 
