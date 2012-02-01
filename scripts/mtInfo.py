@@ -11,9 +11,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 2
-# Last-Updated: Fri Dec 30 12:16:07 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 283
+# Last-Updated: Wed Feb  1 14:24:43 2012 (-0800)
+#           By: Iain Bailey
+#     Update #: 286
 #  
 # Change Log:
 # Thu Dec 29 15:38:54 2011 : Changed name of file, optparse -> argparse
@@ -28,7 +28,7 @@ from math import log10, sqrt
 import numpy as NP
 
 # Personal libraries used
-from pythmt.iofuncs import readPsmecaList
+from pythmt.iofuncs import read_psmecalist
 
 # constants 
 sqrt2 = sqrt(2.0)
@@ -79,7 +79,7 @@ if args.ifile.isatty():
     sys.exit()
 
 # read the input into moment tensors
-(mtlist, alltxt) = readPsmecaList( args.ifile )
+(mtlist, alltxt) = read_psmecalist( args.ifile )
 
 # loop through all
 n = len(mtlist)
