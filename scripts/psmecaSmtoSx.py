@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# psmecaSmtoEig.py.py --- 
+# psmecaSmtoSx.py --- 
 # 
-# Filename: psmecaSmtoSx.py.py
+# Filename: psmecaSmtoSx.py
 # Description: 
 #
 #  Read in moment tensors in a psmeca input Sm (moment tensor) format,
@@ -11,32 +11,29 @@
 # Maintainer: IW Bailey
 # Created: Fri Mar 11 15:31:41 2011 (-0800)
 # Version: 1
-# Last-Updated: Fri Aug  5 16:11:13 2011 (-0700)
+# Last-Updated: Wed Feb  1 15:21:41 2012 (-0800)
 #           By: Iain Bailey
-#     Update #: 57
+#     Update #: 74
 #  
 # Change Log:
-# 
+#
+# Wed Feb  1 2012 - changed to updated functions, changed file name
 # 
 # 
 # 
 
 # Standard libraries used
 import sys
-from optparse import OptionParser
+import argparse
 
 # Personal libraries used
-from ioFunctions import readpsmecaSm  
+from pythmt.iofuncs import psmeca2SymMT
 
 # get command line options
-parser = OptionParser()
-parser.add_option("--Sx",action="store_true", dest="sx", default=False,
-                  help="Output psmeca Sx format")
-(opt, args)=parser.parse_args()
+parser = argparse.ArgumentParser(
+    description='From stdin read psmeca -Sm format, output psmeca -Sx format')
 
-if (not opt.sx): 
-    opt.sx = True
-
+(args)=parser.parse_args()
 
 # read in from stdin assuming psmeca format
 Ndata = 0
@@ -44,16 +41,12 @@ while 1:
     thisline = sys.stdin.readline()
 
     if thisline != '':
+        MT = psmeca2SymMT( thisline )
 
-        # Read line as SymMT object
-        MT, extra = readpsmecaSm( thisline )
-        Ndata += 1
-
-        # output the original line with faulting style tacked on the end
-        if opt.sx:
-            (x,y,z,t,taz,tp,b,baz,bp,p,paz,pp,exp) = MT.getPsmecaSx()
-            sys.stdout.write("%8.4f %8.4f %6.2f %10.6f %8.3f %8.3f %10.6f %8.3f %8.3f %10.6f %8.3f %8.3f %3i\n" % 
-                             (x,y,z,t,taz,tp,b,baz,bp,p,paz,pp,exp))
+        (x,y,z,t,taz,tp,b,baz,bp,p,paz,pp,exp) = MT.getPsmecaSx()
+        sys.stdout.write("%8.4f %8.4f %6.2f %10.6f %8.3f %8.3f %10.6f %8.3f %8.3f %10.6f %8.3f %8.3f %3i\n" % 
+                         (x,y,z,t,taz,tp,b,baz,bp,p,paz,pp,exp))
+        
 
     else: break
             

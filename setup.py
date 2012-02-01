@@ -7,9 +7,9 @@
 # Maintainer: 
 # Created: Fri Dec 16 15:10:30 2011 (-0800)
 # Version: 
-# Last-Updated: Tue Dec 27 15:43:45 2011 (-0800)
-#           By: Iain William Bailey
-#     Update #: 55
+# Last-Updated: Wed Feb  1 14:44:38 2012 (-0800)
+#           By: Iain Bailey
+#     Update #: 56
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -60,7 +60,7 @@ scripts = ["scripts/mtRandom.py"
            , "scripts/mtDecomp.py"
            , "scripts/mtSum.py" 
            , "scripts/mtConvert.py"  # converts between different representations 
-           , "scripts/psmecaSmtoEig.py"
+           , "scripts/psmecaSmtoSx.py"
             ]
 
 setup( name = PACKAGE_NAME,

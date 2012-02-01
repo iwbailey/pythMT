@@ -10,9 +10,9 @@
 # Maintainer: IW Bailey
 # Created: Fri Nov  5 10:06:42 2010 (-0700)
 # Version: 1
-# Last-Updated: Fri Dec 30 17:45:16 2011 (-0800)
+# Last-Updated: Wed Feb  1 15:00:48 2012 (-0800)
 #           By: Iain Bailey
-#     Update #: 644
+#     Update #: 654
 
 # Commentary:
 #
@@ -463,7 +463,7 @@ class SymMT:
         X, Y, depth = self.c[0], self.c[1], self.c[2]
 
         # get the eigenvalues and vectors
-        (V,D) = self.getEig()
+        (V,D) = self.eig()
         
         # convert vectors to azim and plunge
         (paz, ppl) = azimplunge( V[:,0] )
@@ -659,6 +659,32 @@ class EigMT:
         Get scalar moment 
         """
         return NP.sqrt( 0.5*NP.sum( self.pbtvals**2 ) )
+
+    # --------------------------------------------------
+    def psmecaSx( self ):
+        """
+        Return the gmt part for option -Sx
+        longitude, latitude, depth in km,  
+        value (in 10*exponent dynes-cm), azimuth, plunge of T, N, P axis, 
+        exponent         
+        """
+        # get location
+        X, Y, depth = self.c[0], self.c[1], self.c[2]
+
+        # convert vectors to azim and plunge
+        (paz, ppl) = azimplunge( self.p )
+        (baz, bpl) = azimplunge( self.b )
+        (taz, tpl) = azimplunge( self.t )
+
+        # get exponent
+        norm = NP.sqrt( NP.sum( self.pbtvals**2 ) )
+        exp = NP.round( log10( norm ) )
+
+        # remove from eig values
+        D = self.pbtvals / 10**exp
+
+        return X, Y, depth, \
+            D[2], taz, tpl, D[1], baz, bpl, D[0], paz, ppl, exp
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
